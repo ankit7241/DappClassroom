@@ -72,7 +72,7 @@ contract DappClassroom {
 
     function addClass(string memory className) public returns(uint256)
     {
-        uint random = uint(keccak256(abi.encodePacked(block.prevrandao, block.timestamp, classIds,className))) % 100000;
+        uint random = uint(keccak256(abi.encodePacked(block.number, block.timestamp, classIds,className))) % 100000;
         
         classes[random].classCode =  random;
 
