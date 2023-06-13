@@ -2,10 +2,10 @@ import React from 'react';
 import { styled } from 'styled-components';
 import { Link } from 'react-router-dom';
 
+import AddClass from './AddClass';
 import ConnectWalletButton from './ConnectWalletButton';
 
 import Logo from "../assets/img/logo_transparent.svg";
-import Plus from "../assets/img/plus.svg";
 
 export default function Header() {
 
@@ -20,7 +20,7 @@ export default function Header() {
             </Link>
 
             <Right>
-                <img src={Plus} alt="" />
+                <AddClass />
 
                 <ConnectWalletButton />
             </Right>
