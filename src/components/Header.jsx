@@ -1,5 +1,7 @@
 import React from 'react';
 import { styled } from 'styled-components';
+import { Link } from 'react-router-dom';
+
 import ConnectWalletButton from './ConnectWalletButton';
 
 import Logo from "../assets/img/logo_transparent.svg";
@@ -10,10 +12,12 @@ export default function Header() {
     return (
         <Container>
 
-            <Branding>
-                <img src={Logo} alt="" />
-                <p>Dapp Classroom</p>
-            </Branding>
+            <Link to="/">
+                <Branding>
+                    <img src={Logo} alt="" />
+                    <p>Dapp Classroom</p>
+                </Branding>
+            </Link>
 
             <Right>
                 <img src={Plus} alt="" />
