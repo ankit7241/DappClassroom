@@ -69,7 +69,7 @@ All the best!
 
     useEffect(() => {
         (async () => {
-            await fetchData(classData.id)
+            await fetchData(classData?.id)
         })();
     }, [classData])
 
