@@ -54,7 +54,7 @@ export default function HomeCard({ _data }) {
             </Middle>
             <Bottom>
                 <div><img src={Leave} alt="" /></div>
-                <div><img src={Notebook} alt="" /></div>
+                <div><Link to={`/class/${_data.id}/1`}><img src={Notebook} alt="" /></Link></div>
             </Bottom>
 
         </Container >

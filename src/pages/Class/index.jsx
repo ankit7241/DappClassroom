@@ -36,8 +36,15 @@ export default function Class() {
     }, [classId])
 
     useEffect(() => {
-        if (!tab || parseInt(tab) < 0 || parseInt(tab) > 2) {
-            navigate(location.pathname + (location.pathname.charAt(location.pathname.length - 1) === "/" ? "0" : "/0"))
+        try {
+            if (!tab || parseInt(tab) < 0 || parseInt(tab) > 2) {
+                navigate(location.pathname + (location.pathname.charAt(location.pathname.length - 1) === "/" ? "0" : "/0"))
+            }
+            setActiveTab(parseInt(tab))
+        }
+        catch (err) {
+            // navigate(location.pathname + (location.pathname.charAt(location.pathname.length - 1) === "/" ? "0" : "/0"))
+            console.log(err)
         }
     }, [tab])
 
