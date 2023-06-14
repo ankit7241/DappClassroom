@@ -49,6 +49,9 @@
       rgba(0, 0, 0, 0.1)
     ),
     linear-gradient(245.63deg, #fed54b 13.57%, #f5b2e6 46.99%, #8ceaff 84.08%);
+  --blue: #8ceaff;
+  --pink: #f5b2e6;
+  --yellow: #fed54b;
   --font-xxs: 8px;
   --font-xs: 10px;
   --font-sm: 12px;
@@ -100,4 +103,13 @@ body::-webkit-scrollbar-thumb {
 html::-webkit-scrollbar-thumb:hover,
 body::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }

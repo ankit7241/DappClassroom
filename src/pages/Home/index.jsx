@@ -1,182 +1,107 @@
 import React, { useEffect, useState } from "react";
 import { styled } from "styled-components";
 import { useAccount } from "wagmi";
-import { toast } from "react-toastify";
-import { ethers } from "ethers";
-import { CONTRACT_ADDRESS, ABI } from "../../ContractDetails";
+import getClassData from "../../utils/getClassData"
 
 import HomeCard from "../../components/HomeCard";
 import ConnectWalletButton from "../../components/ConnectWalletButton";
+import Loading from "../../components/Loading";
+import Button from "../../components/Button";
+
+import NoClassSvg from "../../assets/img/no_class.svg"
 
 export default function Home() {
-	const { isConnected } = useAccount();
+    const { isConnected } = useAccount();
 
-	const data = {
-		id: "1686598245009",
-		className: "Computer Club",
-		section: "Section - H",
-		teacherName: "Atharv Varshney",
-		teacherAddress: "0x4d4DB20DcDc95A2D8B0e8ccB33D235209B15e5Ee",
-		assignments: [],
-	};
+    const data = {
+        id: "1686598245009",
+        className: "Computer Club",
+        section: "Section - H",
+        teacherName: "Atharv Varshney",
+        teacherAddress: "0x4d4DB20DcDc95A2D8B0e8ccB33D235209B15e5Ee",
+        assignments: [],
+    };
 
-	const data2 = {
-		id: "1686598276043",
-		className: "Computer Science Club",
-		section: "Section - H",
-		teacherName: "Atharv Varshney",
-		teacherAddress: "0xbdfC42145aF525009d3eE7027036777Ed96BF6A4",
-		assignments: [
-			{ deadline: "1689532200000", name: "Assignment name #1" },
-			{
-				deadline: "1689705000000",
-				name: "Assignment name #2 Assignment name #2",
-			},
-			{
-				deadline: "1689705000000",
-				name: "Assignment name #2 Assignment name #2",
-			},
-			{ deadline: "1690223400000", name: "Assignment name #3" },
-		],
-	};
+    const data2 = {
+        id: "1686598276043",
+        className: "Computer Science Club",
+        section: "Section - H",
+        teacherName: "Atharv Varshney",
+        teacherAddress: "0xbdfC42145aF525009d3eE7027036777Ed96BF6A4",
+        assignments: [
+            { deadline: "1689532200000", name: "Assignment name #1" },
+            {
+                deadline: "1689705000000",
+                name: "Assignment name #2 Assignment name #2",
+            },
+            {
+                deadline: "1689705000000",
+                name: "Assignment name #2 Assignment name #2",
+            },
+            { deadline: "1690223400000", name: "Assignment name #3" },
+        ],
+    };
 
-	const [classes, setClasses] = useState([]);
+    const [classes, setClasses] = useState([]);
+    const [loading, setLoading] = useState([]);
 
-	useEffect(() => {
-		FetchClassData().catch((error) => console.error(error));
-	}, []);
+    const fetchData = async () => {
+        setLoading(true)
+        const data = await getClassData();
 
-	const FetchClassData = async () => {
-		// Write a function to join over here and at after success, write this --->
+        if (data.status === "Error") {
+            // toast.error("An unexpected error occurred!", {
+            //     position: "top-center",
+            //     autoClose: 3000,
+            //     hideProgressBar: false,
+            //     closeOnClick: true,
+            //     pauseOnHover: true,
+            //     draggable: true,
+            //     progress: undefined,
+            //     theme: "dark",
+            // });
+            setClasses([]);
+        } else {
+            console.log(data.data);
 
-		try {
-			console.log("Begin");
-			const { ethereum } = window;
+            setClasses(data.data);
+        }
+        setLoading(false)
+    };
 
-			if (ethereum) {
-				const provider = new ethers.providers.Web3Provider(ethereum);
-				const signer = provider.getSigner();
-				const connectedContract = new ethers.Contract(
-					CONTRACT_ADDRESS,
-					ABI,
-					signer
-				);
-				const accounts = await ethereum.request({
-					method: "eth_requestAccounts",
-				});
+    useEffect(() => {
+        (async () => {
+            await fetchData();
+        })();
+    }, []);
 
-				console.log("Connected", accounts[0]);
-
-				let classIdCounter = 0;
-
-				let userClassIds;
-
-				let getUserClassCode = await connectedContract
-					.getUserClassCode()
-					.then((classIdCount) => {
-						userClassIds = `${classIdCount}`;
-					});
-
-				await connectedContract.classIdCounter().then((classIdCount) => {
-					classIdCounter = `${classIdCount}`;
-				});
-
-				console.log(classIdCounter);
-				let userClassIdArray = userClassIds.split(",").map(Number);
-
-				console.log(userClassIdArray);
-				const Data = [];
-
-				for (let j = 0; j < userClassIdArray.length; j++) {
-					for (let i = 0; i < classIdCounter; i++) {
-						await connectedContract.classIds(i).then(async (classIdCount) => {
-							let classTeacherAddress;
-
-							let getClassTeacherAddress = await connectedContract
-								.getClassTeacherAddress(`${classIdCount}`)
-								.then((classIdCount) => {
-									classTeacherAddress = `${classIdCount}`;
-								});
-
-							console.log(userClassIdArray[j]);
-							if (
-								userClassIdArray[j] == `${classIdCount}` ||
-								accounts[0] == `${classTeacherAddress}`
-							) {
-								console.log("Yes");
-
-								let classDescCID;
-
-								let getClassDescCID = await connectedContract
-									.getClassDescCID(`${classIdCount}`)
-									.then((classIdCount) => {
-										classDescCID = `${classIdCount}`;
-									});
-								const url = `https://ipfs.io/ipfs/${classDescCID}`;
-								const res = await fetch(url);
-								let fetchedData = await res.json();
-								const data = JSON.parse(fetchedData);
-								console.log(data);
-
-								const className = data.className;
-								const section = data.section;
-								const teacherName = data.teacherName;
-
-								console.log(className, section, teacherName);
-								let classTeacherAddress;
-
-								let getClassTeacherAddress = await connectedContract
-									.getClassTeacherAddress(`${classIdCount}`)
-									.then((classIdCount) => {
-										classTeacherAddress = `${classIdCount}`;
-									});
-
-								const fetchedObject = {
-									id: `${classIdCount}`,
-									className: `${className}`,
-									section: `${section}`,
-									teacherName: `${teacherName}`,
-									teacherAddress: `${classTeacherAddress}`,
-									assignments: [],
-								};
-
-								Data.push(fetchedObject);
-							}
-						});
-					}
-				}
-
-				setClasses(Data);
-			} else {
-				console.log("Ethereum object doesn't exist!");
-			}
-		} catch (error) {
-			console.log(error);
-			toast.error("An unexpected error occurred!", {
-				position: "top-center",
-				autoClose: 3000,
-				hideProgressBar: false,
-				closeOnClick: true,
-				pauseOnHover: true,
-				draggable: true,
-				progress: undefined,
-				theme: "dark",
-			});
-		}
-	};
-
-	return isConnected ? (
-		<CardContainer>
-			{classes.map((item, ind) => {
-				return <HomeCard key={ind} _data={item} />;
-			})}
-		</CardContainer>
-	) : (
-		<FallbackCont>
-			<p>Please connect your wallet to continue!</p>
-			<ConnectWalletButton />
-		</FallbackCont>
-	);
+    return isConnected ?
+        loading
+            ? (<Loading />)
+            : classes?.length > 0
+                ? (
+                    <CardContainer>
+                        {classes.map((item, ind) => {
+                            return <HomeCard key={ind} _data={item} />;
+                        })}
+                    </CardContainer>
+                )
+                : (
+                    <FallbackCont>
+                        <img src={NoClassSvg} />
+                        <p>Add a class to get started</p>
+                        <div>
+                            <Button>Join Class</Button>
+                            <Button>Create Class</Button>
+                        </div>
+                    </FallbackCont >
+                )
+        : (
+            <FallbackCont>
+                <p>Please connect your wallet to continue!</p>
+                <ConnectWalletButton />
+            </FallbackCont>
+        );
 }
 
 const CardContainer = styled.div`
@@ -200,11 +125,33 @@ const FallbackCont = styled.div`
 	height: 100%;
 	flex: 1;
 
+    img {
+        height: 200px;
+    }
+
 	p {
 		font-weight: 400;
-		font-size: var(--font-xl);
+		font-size: var(--font-lg);
 		line-height: 125%;
 		letter-spacing: 0.05em;
 		color: rgba(255, 255, 255, 0.9);
 	}
+
+    div {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+    }
+
+    button {
+        padding: 10px 30px;
+    }
+
+    button:nth-child(1) {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.75);
+    }
 `;
