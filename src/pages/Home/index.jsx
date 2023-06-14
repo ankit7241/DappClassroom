@@ -3,8 +3,8 @@ import { styled } from "styled-components";
 import { useAccount } from "wagmi";
 import { toast } from "react-toastify";
 import { ethers } from "ethers";
-import { CONTRACT_ADDRESS, ABI } from "../../ContractDetails";
 
+import { CONTRACT_ADDRESS, ABI } from "../../ContractDetails";
 import HomeCard from "../../components/HomeCard";
 import ConnectWalletButton from "../../components/ConnectWalletButton";
 

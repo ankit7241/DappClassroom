@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAccount } from "wagmi";
 import { toast } from "react-toastify";
+import * as PushAPI from "@pushprotocol/restapi";
 
 import Header from "./Header";
 import Stream from "./Stream";
