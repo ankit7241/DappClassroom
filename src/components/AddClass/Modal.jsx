@@ -65,40 +65,40 @@ export default function Modal({ setShowModal, showModal }) {
 				console.log("Connected", accounts[0]);
 				console.log(className);
 
-				// const user = await PushAPI.user.get({
-				// 	account: `eip155:${accounts[0]}`,
-				// 	env: "staging",
-				// });
-				// console.log(user);
+				const user = await PushAPI.user.get({
+					account: `eip155:${accounts[0]}`,
+					env: "staging",
+				});
+				console.log(user);
 
-				// // need to decrypt the encryptedPvtKey to pass in the api using helper function
-				// const pgpDecryptedPvtKey = await PushAPI.chat.decryptPGPKey({
-				// 	encryptedPGPPrivateKey: user.encryptedPrivateKey,
-				// 	signer: signer,
-				// });
+				// need to decrypt the encryptedPvtKey to pass in the api using helper function
+				const pgpDecryptedPvtKey = await PushAPI.chat.decryptPGPKey({
+					encryptedPGPPrivateKey: user.encryptedPrivateKey,
+					signer: signer,
+				});
 
 				// actual api
-				// const response = await PushAPI.chat.createGroup({
-				// 	groupName: `${className}`,
-				// 	groupDescription: "This is the oficial group for Dapp Classroom",
-				// 	members: [],
-				// 	groupImage:
-				// 		"bafkreigypfgxml3ly4hz5lm3l4wxue7xsn2bx7gdduduz7r5dubgrmt56a",
-				// 	admins: [],
-				// 	isPublic: true,
-				// 	account: `${accounts[0]}`,
-				// 	env: "staging",
-				// 	pgpPrivateKey: pgpDecryptedPvtKey, //decrypted private key
-				// });
+				const response = await PushAPI.chat.createGroup({
+					groupName: `${className}`,
+					groupDescription: "This is the oficial group for Dapp Classroom",
+					members: [],
+					groupImage:
+						"bafkreigypfgxml3ly4hz5lm3l4wxue7xsn2bx7gdduduz7r5dubgrmt56a",
+					admins: [],
+					isPublic: true,
+					account: `${accounts[0]}`,
+					env: "staging",
+					pgpPrivateKey: pgpDecryptedPvtKey, //decrypted private key
+				});
 
-				// console.log(response);
+				console.log(response);
 
 				const metadata = JSON.stringify({
 					className: `${className}`,
 					section: `${section}`,
 					teacherName: `${teacherName}`,
-					// adminPrivateKey: `${pgpDecryptedPvtKey}`,
-					// groupChatId: `${response.chatId}`,
+					adminPrivateKey: `${pgpDecryptedPvtKey}`,
+					groupChatId: `${response.chatId}`,
 				});
 
 				console.log(metadata);
