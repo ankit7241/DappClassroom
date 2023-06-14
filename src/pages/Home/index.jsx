@@ -40,18 +40,13 @@ export default function Home() {
 		],
 	};
 
-	const [classes, setClasses] = useState([
-		data,
-		data,
-		data,
-		data2,
-		data,
-		data,
-		data,
-		data,
-	]);
+	const [classes, setClasses] = useState([]);
 
-	const handleCreate = async () => {
+	useEffect(() => {
+		FetchClassData().catch((error) => console.error(error));
+	}, []);
+
+	const FetchClassData = async () => {
 		// Write a function to join over here and at after success, write this --->
 
 		try {
@@ -74,22 +69,84 @@ export default function Home() {
 
 				let classIdCounter = 0;
 
+				let userClassIds;
+
+				let getUserClassCode = await connectedContract
+					.getUserClassCode()
+					.then((classIdCount) => {
+						userClassIds = `${classIdCount}`;
+					});
+
 				await connectedContract.classIdCounter().then((classIdCount) => {
 					classIdCounter = `${classIdCount}`;
 				});
 
 				console.log(classIdCounter);
+				let userClassIdArray = userClassIds.split(",").map(Number);
 
-				let latestValue;
+				console.log(userClassIdArray);
+				const Data = [];
 
-				for (let i = 0; i < classIdCounter; i++) {
-					await connectedContract.classIds(i).then((classIdCount) => {
-						console.log(`Class Id of index ${i} is : ${classIdCount}`);
-						latestValue = `${classIdCount}`;
-					});
+				for (let j = 0; j < userClassIdArray.length; j++) {
+					for (let i = 0; i < classIdCounter; i++) {
+						await connectedContract.classIds(i).then(async (classIdCount) => {
+							let classTeacherAddress;
+
+							let getClassTeacherAddress = await connectedContract
+								.getClassTeacherAddress(`${classIdCount}`)
+								.then((classIdCount) => {
+									classTeacherAddress = `${classIdCount}`;
+								});
+
+							console.log(userClassIdArray[j]);
+							if (
+								userClassIdArray[j] == `${classIdCount}` ||
+								accounts[0] == `${classTeacherAddress}`
+							) {
+								console.log("Yes");
+
+								let classDescCID;
+
+								let getClassDescCID = await connectedContract
+									.getClassDescCID(`${classIdCount}`)
+									.then((classIdCount) => {
+										classDescCID = `${classIdCount}`;
+									});
+								const url = `https://ipfs.io/ipfs/${classDescCID}`;
+								const res = await fetch(url);
+								let fetchedData = await res.json();
+								const data = JSON.parse(fetchedData);
+								console.log(data);
+
+								const className = data.className;
+								const section = data.section;
+								const teacherName = data.teacherName;
+
+								console.log(className, section, teacherName);
+								let classTeacherAddress;
+
+								let getClassTeacherAddress = await connectedContract
+									.getClassTeacherAddress(`${classIdCount}`)
+									.then((classIdCount) => {
+										classTeacherAddress = `${classIdCount}`;
+									});
+
+								const fetchedObject = {
+									id: `${classIdCount}`,
+									className: `${className}`,
+									section: `${section}`,
+									teacherName: `${teacherName}`,
+									teacherAddress: `${classTeacherAddress}`,
+									assignments: [],
+								};
+
+								Data.push(fetchedObject);
+							}
+						});
+					}
 				}
 
-				console.log("Latest value : ", latestValue);
+				setClasses(Data);
 			} else {
 				console.log("Ethereum object doesn't exist!");
 			}
