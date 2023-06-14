@@ -17,7 +17,8 @@
         "styled-components": "^6.0.0-rc.3",
         "viem": "^0.3.50",
         "wagmi": "^1.0.9",
-        "web-vitals": "^2.1.4"
+        "web-vitals": "^2.1.4",
+        "web3.storage": "^4.5.4"
     },
     "scripts": {
         "start": "react-scripts start",
