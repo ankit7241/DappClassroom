@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { styled } from "styled-components";
 import { toast } from "react-toastify";
+import { ethers } from "ethers";
+import * as PushAPI from "@pushprotocol/restapi";
 
 import CopyIcon from "../../assets/img/copy.svg";
 
 import Input from "./Input";
 import Message from "./Message";
 import Home from "../Home/index.jsx";
+import { CONTRACT_ADDRESS, ABI } from "../../ContractDetails";
 
 export default function Stream({ classData }) {
 	const shortenAddress = (address, place) => {
@@ -30,41 +33,93 @@ export default function Stream({ classData }) {
 	const [msgData, setMsgData] = useState(null);
 
 	const fetchData = async (id) => {
-		setMsgData([
-			{
-				from: "0xbdfC42145aF525009d3eE7027036777Ed96BF6A4",
-				fromName: "Atharv Varshney",
-				timestamp: "1686508212592",
-				message: `Greetings! 
+		try {
+			console.log("Begin");
+			const { ethereum } = window;
 
-There is an update to the assignment for React.js. The fifth task has been made optional. Bonus points will be awarded for completing the same. Feel free to reach out to us via email or leave a comment in the classroom if you have any queries. 
-                
-All the best!
-~Atharv Varshney`,
-			},
-			{
-				from: "0xbdfC42145aF525009d3eE7027036777Ed96BF6A4",
-				fromName: "Atharv Varshney",
-				timestamp: "1686508212592",
-				message: `Greetings! 
+			if (ethereum) {
+				const provider = new ethers.providers.Web3Provider(ethereum);
+				const signer = provider.getSigner();
+				const connectedContract = new ethers.Contract(
+					CONTRACT_ADDRESS,
+					ABI,
+					signer
+				);
+				const accounts = await ethereum.request({
+					method: "eth_requestAccounts",
+				});
 
-There is an update to the assignment for React.js. The fifth task has been made optional. Bonus points will be awarded for completing the same. Feel free to reach out to us via email or leave a comment in the classroom if you have any queries. 
-                
-All the best!
-~Atharv Varshney`,
-			},
-			{
-				from: "0xbdfC42145aF525009d3eE7027036777Ed96BF6A4",
-				fromName: "Atharv Varshney",
-				timestamp: "1686508212592",
-				message: `Greetings! 
+				console.log("Connected", accounts[0]);
 
-There is an update to the assignment for React.js. The fifth task has been made optional. Bonus points will be awarded for completing the same. Feel free to reach out to us via email or leave a comment in the classroom if you have any queries. 
-                
-All the best!
-~Atharv Varshney`,
-			},
-		]);
+				let classDescCID;
+				const Data = [];
+
+				let getClassDescCID = await connectedContract
+					.getClassDescCID(id)
+					.then((classIdCount) => {
+						classDescCID = `${classIdCount}`;
+					});
+
+				const url = `https://ipfs.io/ipfs/${classDescCID}`;
+				const res = await fetch(url);
+				let fetchedData = await res.json();
+				const data = JSON.parse(fetchedData);
+				console.log(data);
+
+				const user = await PushAPI.user.get({
+					account: `eip155:${accounts[0]}`,
+					env: "staging",
+				});
+				console.log(user);
+
+				// need to decrypt the encryptedPvtKey to pass in the api using helper function
+				const pgpDecryptedPvtKey = await PushAPI.chat.decryptPGPKey({
+					encryptedPGPPrivateKey: user.encryptedPrivateKey,
+					signer: signer,
+				});
+
+				// conversation hash are also called link inside chat messages
+				const conversationHash = await PushAPI.chat.conversationHash({
+					account: `${accounts[0]}`,
+					conversationId: `${data.groupChatId}`, // receiver's address or chatId of a group
+					env: "staging",
+				});
+
+				// actual api
+				const chatHistory = await PushAPI.chat.history({
+					threadhash: conversationHash.threadHash,
+					account: `${accounts[0]}`,
+					limit: 30,
+					toDecrypt: true,
+					pgpPrivateKey: pgpDecryptedPvtKey,
+					env: "staging",
+				});
+
+				const arrayOfAllMessages = chatHistory.map((name, index) => {
+					const from = chatHistory[index].fromCAIP10.slice(7);
+					const fromName = "Ankit Choudhary";
+					const timestamp = chatHistory[index].timestamp;
+
+					const message = chatHistory[index].messageContent;
+
+					const fetchedObject = {
+						from: `${from}`,
+						fromName: `${fromName}`,
+						timestamp: `${timestamp}`,
+						message: `${message}`,
+					};
+
+					Data.push(fetchedObject);
+				});
+
+				console.log(chatHistory);
+				setMsgData(Data);
+			} else {
+				console.log("Ethereum object doesn't exist!");
+			}
+		} catch (error) {
+			console.log(error);
+		}
 	};
 
 	useEffect(() => {
@@ -119,7 +174,7 @@ All the best!
 				</Left>
 
 				<Right>
-					<Input />
+					<Input classData={classData} />
 					{msgData?.map((item) => {
 						return <Message data={item} />;
 					})}
