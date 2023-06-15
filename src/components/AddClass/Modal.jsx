@@ -182,6 +182,10 @@ export default function Modal({ setShowModal, showModal }) {
 
 				console.log("Connected", accounts[0]);
 
+				let joinClass = await connectedContract.joinClass(code);
+				console.log("Joining Class: Process started");
+				await joinClass.wait();
+
 				let classDescCID;
 
 				let getClassDescCID = await connectedContract
@@ -213,12 +217,7 @@ export default function Modal({ setShowModal, showModal }) {
 					chatId: `${data.groupChatId}`,
 					groupName: `${groupDetails.groupName}`,
 					groupDescription: `${groupDetails.groupDescription}`,
-					members: [
-						// `${groupDetails.groupCreator}`,
-
-						...arrayOfPreviousMembers,
-						`${accounts[0]}`,
-					],
+					members: [...arrayOfPreviousMembers, `${accounts[0]}`],
 					groupImage: `${groupDetails.groupImage}`,
 					admins: [`${groupDetails.groupCreator}`, `${accounts[0]}`],
 					isPublic: true,
@@ -236,10 +235,6 @@ export default function Modal({ setShowModal, showModal }) {
 				});
 
 				console.log(response1);
-
-				let joinClass = await connectedContract.joinClass(code);
-				console.log("Joining Class: Process started");
-				await joinClass.wait();
 
 				console.log("Joining Class: Process fininshed");
 
