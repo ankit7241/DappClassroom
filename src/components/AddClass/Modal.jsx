@@ -4,7 +4,6 @@ import { toast } from "react-toastify";
 import { ethers } from "ethers";
 import { Web3Storage } from "web3.storage";
 import * as PushAPI from "@pushprotocol/restapi";
-
 import Button from "../Button";
 import { CONTRACT_ADDRESS, ABI } from "../../ContractDetails";
 
