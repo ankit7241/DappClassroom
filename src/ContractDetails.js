@@ -1,4 +1,4 @@
-export const CONTRACT_ADDRESS = "0xb2C42330EE09cFf1b02EC5036EBD3baD27700fAa";
+export const CONTRACT_ADDRESS = "0xb38873Ced8F8791871A5E4B6B12ab246DC7CF3D3";
 
 export const ABI = [
 	{
@@ -112,6 +112,30 @@ export const ABI = [
 				internalType: "string",
 				name: "",
 				type: "string",
+			},
+		],
+		stateMutability: "view",
+		type: "function",
+	},
+	{
+		inputs: [
+			{
+				internalType: "uint256",
+				name: "classCode",
+				type: "uint256",
+			},
+			{
+				internalType: "uint256",
+				name: "assignmentCode",
+				type: "uint256",
+			},
+		],
+		name: "getAssignmentExists",
+		outputs: [
+			{
+				internalType: "bool",
+				name: "",
+				type: "bool",
 			},
 		],
 		stateMutability: "view",
@@ -298,19 +322,6 @@ export const ABI = [
 		type: "function",
 	},
 	{
-		inputs: [],
-		name: "getUserName",
-		outputs: [
-			{
-				internalType: "string",
-				name: "",
-				type: "string",
-			},
-		],
-		stateMutability: "view",
-		type: "function",
-	},
-	{
 		inputs: [
 			{
 				internalType: "uint256",
@@ -360,19 +371,6 @@ export const ABI = [
 			},
 		],
 		name: "leaveClass",
-		outputs: [],
-		stateMutability: "nonpayable",
-		type: "function",
-	},
-	{
-		inputs: [
-			{
-				internalType: "string",
-				name: "name",
-				type: "string",
-			},
-		],
-		name: "registration",
 		outputs: [],
 		stateMutability: "nonpayable",
 		type: "function",
