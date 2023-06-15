@@ -1,46 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { styled } from "styled-components";
 import { useAccount } from "wagmi";
+import { toast } from "react-toastify";
 import getClassData from "../../utils/getClassData"
 
 import HomeCard from "../../components/HomeCard";
-import ConnectWalletButton from "../../components/ConnectWalletButton";
 import Loading from "../../components/Loading";
 import Button from "../../components/Button";
+import ConnectWalletFallback from "../../components/ConnectWalletFallback";
 
 import NoClassSvg from "../../assets/img/no_class.svg"
 
 export default function Home() {
     const { isConnected } = useAccount();
-
-    const data = {
-        id: "1686598245009",
-        className: "Computer Club",
-        section: "Section - H",
-        teacherName: "Atharv Varshney",
-        teacherAddress: "0x4d4DB20DcDc95A2D8B0e8ccB33D235209B15e5Ee",
-        assignments: [],
-    };
-
-    const data2 = {
-        id: "1686598276043",
-        className: "Computer Science Club",
-        section: "Section - H",
-        teacherName: "Atharv Varshney",
-        teacherAddress: "0xbdfC42145aF525009d3eE7027036777Ed96BF6A4",
-        assignments: [
-            { deadline: "1689532200000", name: "Assignment name #1" },
-            {
-                deadline: "1689705000000",
-                name: "Assignment name #2 Assignment name #2",
-            },
-            {
-                deadline: "1689705000000",
-                name: "Assignment name #2 Assignment name #2",
-            },
-            { deadline: "1690223400000", name: "Assignment name #3" },
-        ],
-    };
 
     const [classes, setClasses] = useState([]);
     const [loading, setLoading] = useState([]);
@@ -50,20 +22,18 @@ export default function Home() {
         const data = await getClassData();
 
         if (data.status === "Error") {
-            // toast.error("An unexpected error occurred!", {
-            //     position: "top-center",
-            //     autoClose: 3000,
-            //     hideProgressBar: false,
-            //     closeOnClick: true,
-            //     pauseOnHover: true,
-            //     draggable: true,
-            //     progress: undefined,
-            //     theme: "dark",
-            // });
+            toast.error(data.data.msg, {
+                position: "top-center",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "dark",
+            });
             setClasses([]);
         } else {
-            console.log(data.data);
-
             setClasses(data.data);
         }
         setLoading(false)
@@ -81,7 +51,7 @@ export default function Home() {
             : classes?.length > 0
                 ? (
                     <CardContainer>
-                        {classes.map((item, ind) => {
+                        {classes?.map((item, ind) => {
                             return <HomeCard key={ind} _data={item} />;
                         })}
                     </CardContainer>
@@ -96,12 +66,7 @@ export default function Home() {
                         </div>
                     </FallbackCont >
                 )
-        : (
-            <FallbackCont>
-                <p>Please connect your wallet to continue!</p>
-                <ConnectWalletButton />
-            </FallbackCont>
-        );
+        : <ConnectWalletFallback />
 }
 
 const CardContainer = styled.div`

@@ -1,187 +1,127 @@
 import React, { useEffect, useState } from "react";
 import { styled } from "styled-components";
 import { toast } from "react-toastify";
-import { ethers } from "ethers";
-import * as PushAPI from "@pushprotocol/restapi";
 
-import CopyIcon from "../../assets/img/copy.svg";
+import getChatHistory from "../../utils/getChatHistory";
 
 import Input from "./Input";
 import Message from "./Message";
-import Home from "../Home/index.jsx";
-import { CONTRACT_ADDRESS, ABI } from "../../ContractDetails";
+
+import CopyIcon from "../../assets/img/copy.svg";
+import Loading from "../../components/Loading";
+import Button from "../../components/Button";
 
 export default function Stream({ classData }) {
-	const shortenAddress = (address, place) => {
-		return address?.slice(0, place) + "..." + address?.slice(-place);
-	};
+    const shortenAddress = (address, place) => {
+        return address?.slice(0, place) + "..." + address?.slice(-place);
+    };
 
-	const handleCopy = (txt) => {
-		navigator.clipboard.writeText(txt);
-		toast.success("Class code copied successfully", {
-			position: "top-center",
-			autoClose: 3000,
-			hideProgressBar: false,
-			closeOnClick: true,
-			pauseOnHover: true,
-			draggable: true,
-			progress: undefined,
-			theme: "dark",
-		});
-	};
+    const handleCopy = (txt) => {
+        navigator.clipboard.writeText(txt);
+        toast.success("Class code copied successfully", {
+            position: "top-center",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "dark",
+        });
+    };
 
-	const [msgData, setMsgData] = useState(null);
+    const [loading, setLoading] = useState(null);
+    const [msgData, setMsgData] = useState(null);
 
-	const fetchData = async (id) => {
-		try {
-			console.log("Begin");
-			const { ethereum } = window;
+    const fetchData = async (id) => {
+        const chatHistory = await getChatHistory(id, setLoading);
+        if (chatHistory.status === "Success") {
+            setMsgData(chatHistory.data)
+        }
+        else {
+            toast.error(chatHistory.data.msg, {
+                position: "top-center",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "dark",
+            });
+        }
+    };
 
-			if (ethereum) {
-				const provider = new ethers.providers.Web3Provider(ethereum);
-				const signer = provider.getSigner();
-				const connectedContract = new ethers.Contract(
-					CONTRACT_ADDRESS,
-					ABI,
-					signer
-				);
-				const accounts = await ethereum.request({
-					method: "eth_requestAccounts",
-				});
+    useEffect(() => {
+        if (classData && classData.id) {
+            (async () => {
+                await fetchData(classData.id);
+            })();
+        }
+    }, [classData]);
 
-				console.log("Connected", accounts[0]);
+    return (
+        <Container>
+            <Top>
+                <h2>{classData?.className}</h2>
+                <h4>{classData?.section}</h4>
+                <p>
+                    {classData?.teacherName}{" "}
+                    <span>({shortenAddress(classData?.teacherAddress, 4)})</span>
+                </p>
+            </Top>
 
-				let classDescCID;
-				const Data = [];
+            <Main>
+                <Left>
+                    <CodeDiv>
+                        <h3>Class code</h3>
+                        <div onClick={() => handleCopy(classData?.id)}>
+                            <p>{classData?.id}</p>
+                            <img src={CopyIcon} alt="" />
+                        </div>
+                    </CodeDiv>
 
-				let getClassDescCID = await connectedContract
-					.getClassDescCID(id)
-					.then((classIdCount) => {
-						classDescCID = `${classIdCount}`;
-					});
+                    <AssignmentsDiv>
+                        <h3>Upcoming</h3>
 
-				const url = `https://ipfs.io/ipfs/${classDescCID}`;
-				const res = await fetch(url);
-				let fetchedData = await res.json();
-				const data = JSON.parse(fetchedData);
-				console.log(data);
+                        {classData?.assignments?.map((item, ind) => {
+                            return (
+                                <div key={ind}>
+                                    <p>
+                                        Due{" "}
+                                        {new Date(parseInt(item.deadline)).toLocaleString(
+                                            "default",
+                                            { day: "numeric", month: "long" }
+                                        )}
+                                    </p>
+                                    <h4>
+                                        {item.name.length > 15
+                                            ? item.name.slice(0, 15) + "..."
+                                            : item.name}
+                                    </h4>
+                                </div>
+                            );
+                        })}
+                    </AssignmentsDiv>
+                </Left>
 
-				const user = await PushAPI.user.get({
-					account: `eip155:${accounts[0]}`,
-					env: "staging",
-				});
-				console.log(user);
-
-				// need to decrypt the encryptedPvtKey to pass in the api using helper function
-				const pgpDecryptedPvtKey = await PushAPI.chat.decryptPGPKey({
-					encryptedPGPPrivateKey: user.encryptedPrivateKey,
-					signer: signer,
-				});
-
-				// conversation hash are also called link inside chat messages
-				const conversationHash = await PushAPI.chat.conversationHash({
-					account: `${accounts[0]}`,
-					conversationId: `${data.groupChatId}`, // receiver's address or chatId of a group
-					env: "staging",
-				});
-
-				// actual api
-				const chatHistory = await PushAPI.chat.history({
-					threadhash: conversationHash.threadHash,
-					account: `${accounts[0]}`,
-					limit: 30,
-					toDecrypt: true,
-					pgpPrivateKey: pgpDecryptedPvtKey,
-					env: "staging",
-				});
-
-				const arrayOfAllMessages = chatHistory.map((name, index) => {
-					const from = chatHistory[index].fromCAIP10.slice(7);
-					const fromName = "Ankit Choudhary";
-					const timestamp = chatHistory[index].timestamp;
-
-					const message = chatHistory[index].messageContent;
-
-					const fetchedObject = {
-						from: `${from}`,
-						fromName: `${fromName}`,
-						timestamp: `${timestamp}`,
-						message: `${message}`,
-					};
-
-					Data.push(fetchedObject);
-				});
-
-				console.log(chatHistory);
-				setMsgData(Data);
-			} else {
-				console.log("Ethereum object doesn't exist!");
-			}
-		} catch (error) {
-			console.log(error);
-		}
-	};
-
-	useEffect(() => {
-		(async () => {
-			await fetchData(classData?.id);
-		})();
-	}, [classData]);
-
-	return (
-		<Container>
-			<Top>
-				<h2>{classData?.className}</h2>
-				<h4>{classData?.section}</h4>
-				<p>
-					{classData?.teacherName}{" "}
-					<span>({shortenAddress(classData?.teacherAddress, 4)})</span>
-				</p>
-			</Top>
-
-			<Main>
-				<Left>
-					<CodeDiv>
-						<h3>Class code</h3>
-						<div onClick={() => handleCopy(classData?.id)}>
-							<p>{classData?.id}</p>
-							<img src={CopyIcon} alt="" />
-						</div>
-					</CodeDiv>
-
-					<AssignmentsDiv>
-						<h3>Upcoming</h3>
-
-						{classData?.assignments.map((item, ind) => {
-							return (
-								<div key={ind}>
-									<p>
-										Due{" "}
-										{new Date(parseInt(item.deadline)).toLocaleString(
-											"default",
-											{ day: "numeric", month: "long" }
-										)}
-									</p>
-									<h4>
-										{item.name.length > 15
-											? item.name.slice(0, 15) + "..."
-											: item.name}
-									</h4>
-								</div>
-							);
-						})}
-					</AssignmentsDiv>
-				</Left>
-
-				<Right>
-					<Input classData={classData} />
-					{msgData?.map((item) => {
-						return <Message data={item} />;
-					})}
-				</Right>
-			</Main>
-		</Container>
-	);
+                <Right>
+                    {
+                        loading
+                            ? <Loading text="Sign messages to load chat history..." />
+                            : msgData
+                                ? <>
+                                    <Input classData={classData} />
+                                    {msgData?.map((item) => {
+                                        return <Message data={item} />;
+                                    })}
+                                </>
+                                : <Button onClick={async () => { await fetchData(classData.id) }}>Load Messages</Button>
+                    }
+                </Right>
+            </Main>
+        </Container>
+    );
 }
 
 const Container = styled.div`

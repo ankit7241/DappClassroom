@@ -1,318 +1,82 @@
 import React, { useState } from "react";
 import { styled } from "styled-components";
-import { toast } from "react-toastify";
-import { ethers } from "ethers";
-import { Web3Storage } from "web3.storage";
-import * as PushAPI from "@pushprotocol/restapi";
+
 import Button from "../Button";
-import { CONTRACT_ADDRESS, ABI } from "../../ContractDetails";
+import createClass from "../../utils/createClass";
 
 export default function Modal({ setShowModal, showModal }) {
-	const [className, setClassName] = useState("");
-	const [section, setSection] = useState("");
-	const [teacherName, setTeacherName] = useState("");
+    const [className, setClassName] = useState("");
+    const [section, setSection] = useState("");
+    const [teacherName, setTeacherName] = useState("");
 
-	const [code, setCode] = useState("");
+    const [code, setCode] = useState("");
+    const [loadCreateMessage, setLoadCreateMessage] = useState(null);
+    const [loadJoinMessage, setLoadJoinMessage] = useState(null);
 
-	function getAccessToken() {
-		return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkaWQ6ZXRocjoweDI1MDQ3MDFlNEE1QTdGYzZDN2E1MTVEOWQ2NzliMWYwRUJlOTJCQzQiLCJpc3MiOiJ3ZWIzLXN0b3JhZ2UiLCJpYXQiOjE2NzAwMzE3NzMxMjUsIm5hbWUiOiJEZW1vV2ViM1N0b3JhZ2UifQ.weNDPksDEyYK9yPiGK1MScTvW28Wi958gzcttMFrVF4";
-	}
 
-	function makeStorageClient() {
-		return new Web3Storage({ token: getAccessToken() });
-	}
+    const handleCreate = async () => {
+        await createClass(className, section, teacherName, setLoadCreateMessage, setShowModal)
+    };
 
-	async function makeFileObjects(questions) {
-		const blob = new Blob([JSON.stringify(questions)], {
-			type: "application/json",
-		});
+    const handleJoin = async () => {
+        await createClass(setLoadJoinMessage, setShowModal)
+    };
 
-		const files = [new File([blob], "nftInfo.json")];
-		console.log(files);
-		return files;
-	}
+    return (
+        <Container onClick={() => setShowModal(false)}>
+            <Main onClick={(e) => e.stopPropagation()}>
+                <h2>Add class</h2>
 
-	async function storeFiles(questions) {
-		console.log("Uploading data to IPFS with web3.storage....");
+                <div>
+                    <input
+                        type="text"
+                        placeholder="Class Name e.g. Computer Science Club"
+                        value={className}
+                        onChange={(e) => setClassName(e.target.value)}
+                    />
+                    <input
+                        type="text"
+                        placeholder="Section e.g. H"
+                        value={section}
+                        onChange={(e) => setSection(e.target.value)}
+                    />
+                    <input
+                        type="text"
+                        placeholder="Teacher Name e.g. Atharv Varshney"
+                        value={teacherName}
+                        onChange={(e) => setTeacherName(e.target.value)}
+                    />
+                    <StyledButton onClick={handleCreate}>
+                        {
+                            loadCreateMessage
+                                ? <>{loadCreateMessage} <Loader /></>
+                                : "Create Class"
+                        }
+                    </StyledButton>
+                </div>
 
-		const files = await makeFileObjects(questions);
-		const client = makeStorageClient();
-		const cid = await client.put(files, { wrapWithDirectory: false });
+                <Divider>
+                    <p>OR</p>
+                </Divider>
 
-		return cid;
-	}
-
-	const handleCreate = async () => {
-		// Write a function to join over here and at after success, write this --->
-
-		try {
-			console.log("Begin");
-			const { ethereum } = window;
-
-			if (ethereum) {
-				const provider = new ethers.providers.Web3Provider(ethereum);
-				const signer = provider.getSigner();
-				const connectedContract = new ethers.Contract(
-					CONTRACT_ADDRESS,
-					ABI,
-					signer
-				);
-				const accounts = await ethereum.request({
-					method: "eth_requestAccounts",
-				});
-
-				console.log("Connected", accounts[0]);
-				console.log(className);
-
-				const user = await PushAPI.user.get({
-					account: `eip155:${accounts[0]}`,
-					env: "staging",
-				});
-				console.log(user);
-
-				// need to decrypt the encryptedPvtKey to pass in the api using helper function
-				const pgpDecryptedPvtKey = await PushAPI.chat.decryptPGPKey({
-					encryptedPGPPrivateKey: user.encryptedPrivateKey,
-					signer: signer,
-				});
-
-				// actual api
-				const response = await PushAPI.chat.createGroup({
-					groupName: `${className}`,
-					groupDescription: "This is the oficial group for Dapp Classroom",
-					members: [],
-					groupImage:
-						"bafkreigypfgxml3ly4hz5lm3l4wxue7xsn2bx7gdduduz7r5dubgrmt56a",
-					admins: [],
-					isPublic: true,
-					account: `${accounts[0]}`,
-					env: "staging",
-					pgpPrivateKey: pgpDecryptedPvtKey, //decrypted private key
-				});
-
-				console.log(response);
-
-				const metadata = JSON.stringify({
-					className: `${className}`,
-					section: `${section}`,
-					teacherName: `${teacherName}`,
-					adminPrivateKey: `${pgpDecryptedPvtKey}`,
-					groupChatId: `${response.chatId}`,
-				});
-
-				console.log(metadata);
-
-				const descriptionCID = await storeFiles(metadata);
-
-				let addClassfunc = await connectedContract.addClass(descriptionCID);
-				console.log("Adding Class: Process started");
-				await addClassfunc.wait();
-
-				console.log("Adding Class: Process fininshed");
-
-				let classIdCounter = 0;
-
-				await connectedContract.classIdCounter().then((classIdCount) => {
-					classIdCounter = `${classIdCount}`;
-				});
-
-				console.log(classIdCounter);
-
-				let latestValue;
-
-				for (let i = 0; i < classIdCounter; i++) {
-					await connectedContract.classIds(i).then((classIdCount) => {
-						console.log(`Class Id of index ${i} is : ${classIdCount}`);
-						latestValue = `${classIdCount}`;
-					});
-				}
-
-				console.log("Latest value : ", latestValue);
-
-				toast.success(
-					`Class created successfully! Your Classroom Code is : ${latestValue}`,
-					{
-						position: "top-center",
-						autoClose: 3000,
-						hideProgressBar: false,
-						closeOnClick: true,
-						pauseOnHover: true,
-						draggable: true,
-						progress: undefined,
-						theme: "dark",
-					}
-				);
-				setShowModal(false);
-			} else {
-				console.log("Ethereum object doesn't exist!");
-			}
-		} catch (error) {
-			console.log(error);
-			toast.error("An unexpected error occurred!", {
-				position: "top-center",
-				autoClose: 3000,
-				hideProgressBar: false,
-				closeOnClick: true,
-				pauseOnHover: true,
-				draggable: true,
-				progress: undefined,
-				theme: "dark",
-			});
-		}
-	};
-
-	const handleJoin = async () => {
-		// Write a function to join over here and at after success, write this --->
-
-		try {
-			console.log("Begin");
-			const { ethereum } = window;
-
-			if (ethereum) {
-				const provider = new ethers.providers.Web3Provider(ethereum);
-				const signer = provider.getSigner();
-				const connectedContract = new ethers.Contract(
-					CONTRACT_ADDRESS,
-					ABI,
-					signer
-				);
-				const accounts = await ethereum.request({
-					method: "eth_requestAccounts",
-				});
-
-				console.log("Connected", accounts[0]);
-
-				let joinClass = await connectedContract.joinClass(code);
-				console.log("Joining Class: Process started");
-				await joinClass.wait();
-
-				let classDescCID;
-
-				let getClassDescCID = await connectedContract
-					.getClassDescCID(`${code}`)
-					.then((classIdCount) => {
-						classDescCID = `${classIdCount}`;
-					});
-
-				const url = `https://ipfs.io/ipfs/${classDescCID}`;
-				const res = await fetch(url);
-				let fetchedData = await res.json();
-				const data = JSON.parse(fetchedData);
-				console.log(data);
-
-				const groupDetails = await PushAPI.chat.getGroup({
-					chatId: `${data.groupChatId}`,
-					env: "staging",
-				});
-
-				const arrayOfPreviousMembers = groupDetails.members.map(
-					(name, index) => {
-						const str = groupDetails.members[index].wallet.slice(7, 49);
-						return str;
-					}
-				);
-
-				// actual api
-				const response = await PushAPI.chat.updateGroup({
-					chatId: `${data.groupChatId}`,
-					groupName: `${groupDetails.groupName}`,
-					groupDescription: `${groupDetails.groupDescription}`,
-					members: [...arrayOfPreviousMembers, `${accounts[0]}`],
-					groupImage: `${groupDetails.groupImage}`,
-					admins: [`${groupDetails.groupCreator}`, `${accounts[0]}`],
-					isPublic: true,
-					account: `${groupDetails.groupCreator}`,
-					env: "staging",
-					pgpPrivateKey: data.adminPrivateKey, //decrypted private key
-				});
-				console.log(response);
-
-				const response1 = await PushAPI.chat.approve({
-					status: "Approved",
-					account: `${accounts[0]}`,
-					senderAddress: `${data.groupChatId}`, // receiver's address or chatId of a group
-					env: "staging",
-				});
-
-				console.log(response1);
-
-				console.log("Joining Class: Process fininshed");
-
-				toast.success("Class joined successfully!", {
-					position: "top-center",
-					autoClose: 3000,
-					hideProgressBar: false,
-					closeOnClick: true,
-					pauseOnHover: true,
-					draggable: true,
-					progress: undefined,
-					theme: "dark",
-				});
-				setShowModal(false);
-			} else {
-				console.log("Ethereum object doesn't exist!");
-			}
-		} catch (error) {
-			console.log(error);
-			toast.error(
-				"The provided class code does not exist. Please check again and then try !",
-				{
-					position: "top-center",
-					autoClose: 3000,
-					hideProgressBar: false,
-					closeOnClick: true,
-					pauseOnHover: true,
-					draggable: true,
-					progress: undefined,
-					theme: "dark",
-				}
-			);
-		}
-	};
-
-	return (
-		<Container onClick={() => setShowModal(false)}>
-			<Main onClick={(e) => e.stopPropagation()}>
-				<h2>Add class</h2>
-
-				<div>
-					<input
-						type="text"
-						placeholder="Class Name e.g. Computer Science Club"
-						value={className}
-						onChange={(e) => setClassName(e.target.value)}
-					/>
-					<input
-						type="text"
-						placeholder="Section e.g. H"
-						value={section}
-						onChange={(e) => setSection(e.target.value)}
-					/>
-					<input
-						type="text"
-						placeholder="Teacher Name e.g. Atharv Varshney"
-						value={teacherName}
-						onChange={(e) => setTeacherName(e.target.value)}
-					/>
-					<StyledButton onClick={handleCreate}>Create Class</StyledButton>
-				</div>
-
-				<Divider>
-					<p>OR</p>
-				</Divider>
-
-				<div>
-					<input
-						type="text"
-						placeholder="Enter Class Code e.g. 1986598276043"
-						value={code}
-						onChange={(e) => setCode(e.target.value)}
-					/>
-					<StyledButton onClick={handleJoin}>Join Class</StyledButton>
-				</div>
-			</Main>
-		</Container>
-	);
+                <div>
+                    <input
+                        type="text"
+                        placeholder="Enter Class Code e.g. 50786"
+                        value={code}
+                        onChange={(e) => setCode(e.target.value)}
+                    />
+                    <StyledButton onClick={handleJoin}>
+                        {
+                            loadJoinMessage
+                                ? <>{loadJoinMessage} <Loader /></>
+                                : "Join Class"
+                        }
+                    </StyledButton>
+                </div>
+            </Main>
+        </Container>
+    );
 }
 
 const Container = styled.div`
@@ -415,4 +179,24 @@ const StyledButton = styled(Button)`
 	border-radius: 10px;
 	font-weight: 500;
 	padding: 10px;
+
+    svg {
+        display: inline;
+        width: 25px;
+        height: 25px;
+        color: rgba(255, 255, 255, 0.05);
+        fill: var(--bg);
+        animation: spin 0.75s infinite linear;
+        margin-left: 7px;
+    }
 `;
+
+
+const Loader = () => {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor" />
+            <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill" />
+        </svg>
+    )
+}
