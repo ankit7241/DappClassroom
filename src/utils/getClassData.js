@@ -1,12 +1,10 @@
-import { ethers } from "ethers";
-import { Web3Storage } from "web3.storage";
+import { ethers, BigNumber } from "ethers";
 
 import { CONTRACT_ADDRESS, ABI } from "../ContractDetails";
 
-export default async function FetchClassData() {
+export default async function FetchClassData(id) {
 
     try {
-        // console.log("Begin");
         const { ethereum } = window;
 
         if (ethereum) {
@@ -21,64 +19,71 @@ export default async function FetchClassData() {
                 method: "eth_requestAccounts",
             });
 
-            // console.log("Connected", accounts[0]);
 
+            // Fetching All the Classes a user is enrolled in
             let userClassIds;
-
             await connectedContract
                 .getUserClassCode()
                 .then((classIdCount) => {
                     userClassIds = `${classIdCount}`;
                 });
 
-            let classIdCounter;
+            // Making an Array of all class Ids a user is enrolled in
+            const userClassIdArray = userClassIds.split(",").map(Number);
 
-            await connectedContract.classIdCounter().then((classIdCount) => {
-                classIdCounter = `${classIdCount}`;
-            });
+            if (id) {
+                if (userClassIdArray.includes(parseInt(id))) {
+                    let classDescCID;
 
-            // console.log(classIdCounter);
-            let userClassIdArray = userClassIds.split(",").map(Number);
+                    await connectedContract
+                        .getClassDescCID(`${id}`)
+                        .then((resp) => {
+                            classDescCID = `${resp}`;
+                        });
+                    const url = `https://ipfs.io/ipfs/${classDescCID}`;
+                    const res = await fetch(url);
+                    let fetchedData = await res.json();
+                    const data = JSON.parse(fetchedData);
 
-            // console.log(userClassIdArray);
-            const Data = [];
+                    const className = data.className;
+                    const section = data.section;
+                    const teacherName = data.teacherName;
 
-            for (let j = 0; j < userClassIdArray.length; j++) {
-                for (let i = 0; i < classIdCounter; i++) {
-                    await connectedContract.classIds(i).then(async (classIdCount) => {
-                        let classTeacherAddress;
+                    let classTeacherAddress;
 
-                        await connectedContract
-                            .getClassTeacherAddress(`${classIdCount}`)
-                            .then((classIdCount) => {
-                                classTeacherAddress = `${classIdCount}`;
-                            });
+                    await connectedContract
+                        .getClassTeacherAddress(`${id}`)
+                        .then((resp) => {
+                            classTeacherAddress = `${resp}`;
+                        });
 
-                        // console.log(userClassIdArray[j]);
-                        if (
-                            userClassIdArray[j] == `${classIdCount}` ||
-                            accounts[0] == `${classTeacherAddress}`
-                        ) {
-                            console.log("Yes");
+                    const fetchedObject = {
+                        id: `${id}`,
+                        className: `${className}`,
+                        section: `${section}`,
+                        teacherName: `${teacherName}`,
+                        teacherAddress: `${classTeacherAddress}`,
+                        assignments: [],
+                    };
 
-                            let classDescCID;
+                    return { status: "Success", data: fetchedObject };
+                }
+                else {
+                    return { status: "Error", data: { msg: "You are not a member of this classroom!" } };
+                }
+            }
+            else {
+                // Total number of classes
+                let classIdCounter;
+                await connectedContract.classIdCounter().then((classIdCount) => {
+                    classIdCounter = `${classIdCount}`;
+                });
 
-                            await connectedContract
-                                .getClassDescCID(`${classIdCount}`)
-                                .then((classIdCount) => {
-                                    classDescCID = `${classIdCount}`;
-                                });
-                            const url = `https://ipfs.io/ipfs/${classDescCID}`;
-                            const res = await fetch(url);
-                            let fetchedData = await res.json();
-                            const data = JSON.parse(fetchedData);
-                            // console.log(data);
-
-                            const className = data.className;
-                            const section = data.section;
-                            const teacherName = data.teacherName;
-
-                            // console.log(className, section, teacherName);
+                // Fetching all data of all the classes user is enrolled in
+                let Data = [];
+                for (let j = 0; j < userClassIdArray.length; j++) {
+                    for (let i = 0; i < classIdCounter; i++) {
+                        await connectedContract.classIds(i).then(async (classIdCount) => {
                             let classTeacherAddress;
 
                             await connectedContract
@@ -87,27 +92,64 @@ export default async function FetchClassData() {
                                     classTeacherAddress = `${classIdCount}`;
                                 });
 
-                            const fetchedObject = {
-                                id: `${classIdCount}`,
-                                className: `${className}`,
-                                section: `${section}`,
-                                teacherName: `${teacherName}`,
-                                teacherAddress: `${classTeacherAddress}`,
-                                assignments: [],
-                            };
+                            if (
+                                userClassIdArray[j] === BigNumber.from(classIdCount).toNumber() ||
+                                accounts[0] === `${classTeacherAddress}`
+                            ) {
+                                let classDescCID;
 
-                            Data.push(fetchedObject);
-                        }
-                    });
+                                await connectedContract
+                                    .getClassDescCID(`${classIdCount}`)
+                                    .then((classIdCount) => {
+                                        classDescCID = `${classIdCount}`;
+                                    });
+                                const url = `https://ipfs.io/ipfs/${classDescCID}`;
+                                const res = await fetch(url);
+                                let fetchedData = await res.json();
+                                const data = JSON.parse(fetchedData);
+
+                                const className = data.className;
+                                const section = data.section;
+                                const teacherName = data.teacherName;
+
+                                let classTeacherAddress;
+
+                                await connectedContract
+                                    .getClassTeacherAddress(`${classIdCount}`)
+                                    .then((classIdCount) => {
+                                        classTeacherAddress = `${classIdCount}`;
+                                    });
+
+                                const fetchedObject = {
+                                    id: `${classIdCount}`,
+                                    className: `${className}`,
+                                    section: `${section}`,
+                                    teacherName: `${teacherName}`,
+                                    teacherAddress: `${classTeacherAddress}`,
+                                    assignments: [],
+                                };
+
+                                Data.push(fetchedObject);
+                            }
+                        });
+                    }
                 }
-            }
 
-            return { status: "Success", data: Data };
+                return { status: "Success", data: Data };
+            }
+            // return { status: "Success", data: "Data" };
         } else {
             console.log("Ethereum object doesn't exist!");
+            return { status: "Error", data: { err: null, msg: "Some problem with Metamask! Please try again" } };
         }
     } catch (e) {
-        // console.error(e);
-        return { status: "Error", data: e };
+        console.error(e);
+
+        if (e.error.data.message.includes("Create class or join one")) {
+            return { status: "Error", data: { err: e, msg: "You are not enrolled in any classroom!" } };
+        }
+        else {
+            return { status: "Error", data: { err: e, msg: "Unexpected error occurred!" } };
+        }
     }
 }
