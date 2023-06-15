@@ -1,11 +1,15 @@
 import React from "react";
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { styled } from 'styled-components';
 
 import HomeIcon from "../../assets/img/home_icon.svg"
 import ConnectWalletButton from '../../components/ConnectWalletButton';
 
 export default function Header({ classData, activeTab, setActiveTab }) {
+
+    const navigate = useNavigate();
+
+
     return (
         <HeaderContainer>
             <Left>
@@ -18,13 +22,13 @@ export default function Header({ classData, activeTab, setActiveTab }) {
             </Left>
 
             <Middle>
-                <div onClick={() => setActiveTab(0)}>
+                <div onClick={() => { setActiveTab(0); navigate(`/class/${classData.id}/0`) }}>
                     <p activetab={activeTab === 0 ? "true" : "false"}>Stream</p>
                 </div>
-                <div onClick={() => setActiveTab(1)}>
+                <div onClick={() => { setActiveTab(1); navigate(`/class/${classData.id}/1`) }}>
                     <p activetab={activeTab === 1 ? "true" : "false"}>Assignments</p>
                 </div>
-                <div onClick={() => setActiveTab(2)} >
+                <div onClick={() => { setActiveTab(2); navigate(`/class/${classData.id}/2`) }} >
                     <p activetab={activeTab === 2 ? "true" : "false"}>People</p>
                 </div>
             </Middle>
