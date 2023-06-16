@@ -73,71 +73,48 @@ export default async function FetchClassData(id) {
                 }
             }
             else {
-                // Total number of classes
-                let classIdCounter;
-                await connectedContract.classIdCounter().then((classIdCount) => {
-                    classIdCounter = `${classIdCount}`;
-                });
+                const Data = await Promise.all(userClassIdArray.map(async (item) => {
 
-                // Fetching all data of all the classes user is enrolled in
-                let Data = [];
-                for (let j = 0; j < userClassIdArray.length; j++) {
-                    for (let i = 0; i < classIdCounter; i++) {
-                        await connectedContract.classIds(i).then(async (classIdCount) => {
-                            let classTeacherAddress;
+                    let classDescCID;
 
-                            await connectedContract
-                                .getClassTeacherAddress(`${classIdCount}`)
-                                .then((classIdCount) => {
-                                    classTeacherAddress = `${classIdCount}`;
-                                });
-
-                            if (
-                                userClassIdArray[j] === BigNumber.from(classIdCount).toNumber() ||
-                                accounts[0].toLowerCase() === classTeacherAddress.toLowerCase()
-                            ) {
-                                let classDescCID;
-
-                                await connectedContract
-                                    .getClassDescCID(`${classIdCount}`)
-                                    .then((classIdCount) => {
-                                        classDescCID = `${classIdCount}`;
-                                    });
-                                const url = `https://ipfs.io/ipfs/${classDescCID}`;
-                                const res = await fetch(url);
-                                let fetchedData = await res.json();
-                                const data = JSON.parse(fetchedData);
-
-                                const className = data.className;
-                                const section = data.section;
-                                const teacherName = data.teacherName;
-
-                                let classTeacherAddress;
-
-                                await connectedContract
-                                    .getClassTeacherAddress(`${classIdCount}`)
-                                    .then((classIdCount) => {
-                                        classTeacherAddress = `${classIdCount}`;
-                                    });
-
-                                const fetchedObject = {
-                                    id: `${classIdCount}`,
-                                    className: `${className}`,
-                                    section: `${section}`,
-                                    teacherName: `${teacherName}`,
-                                    teacherAddress: `${classTeacherAddress}`,
-                                    assignments: [],
-                                };
-
-                                Data.push(fetchedObject);
-                            }
+                    await connectedContract
+                        .getClassDescCID(`${item}`)
+                        .then((resp) => {
+                            classDescCID = `${resp}`;
                         });
-                    }
-                }
+
+                    const url = `https://ipfs.io/ipfs/${classDescCID}`;
+                    const res = await fetch(url);
+                    let fetchedData = await res.json();
+                    const data = JSON.parse(fetchedData);
+
+                    const className = data.className;
+                    const section = data.section;
+                    const teacherName = data.teacherName;
+
+                    let classTeacherAddress;
+
+                    await connectedContract
+                        .getClassTeacherAddress(`${item}`)
+                        .then((resp) => {
+                            classTeacherAddress = `${resp}`;
+                        });
+
+                    const fetchedObject = {
+                        id: `${item}`,
+                        className: `${className}`,
+                        section: `${section}`,
+                        teacherName: `${teacherName}`,
+                        teacherAddress: `${classTeacherAddress}`,
+                        assignments: [],
+                    };
+
+
+                    return (fetchedObject)
+                }));
 
                 return { status: "Success", data: Data };
             }
-            // return { status: "Success", data: "Data" };
         } else {
             console.log("Ethereum object doesn't exist!");
             return { status: "Error", data: { err: null, msg: "Some problem with Metamask! Please try again" } };
