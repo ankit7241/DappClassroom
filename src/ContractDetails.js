@@ -1,4 +1,4 @@
-export const CONTRACT_ADDRESS = "0x6583637B7EA88b5C629F75F41AF610a162a8a1d5";
+export const CONTRACT_ADDRESS = "0x56B3f480Ac1e5545B838bBb86cACB7D104FfF6E8";
 
 export const ABI = [
 	{
@@ -57,6 +57,83 @@ export const ABI = [
 		type: "function",
 	},
 	{
+		inputs: [
+			{
+				internalType: "uint256",
+				name: "classCode",
+				type: "uint256",
+			},
+			{
+				internalType: "uint256",
+				name: "assignmentCode",
+				type: "uint256",
+			},
+			{
+				internalType: "string",
+				name: "assignmentCID",
+				type: "string",
+			},
+		],
+		name: "completedAssigment",
+		outputs: [],
+		stateMutability: "nonpayable",
+		type: "function",
+	},
+	{
+		inputs: [
+			{
+				internalType: "uint256",
+				name: "classCode",
+				type: "uint256",
+			},
+			{
+				internalType: "uint256",
+				name: "assignmentCode",
+				type: "uint256",
+			},
+			{
+				internalType: "uint256",
+				name: "marks",
+				type: "uint256",
+			},
+			{
+				internalType: "address",
+				name: "studentAddress",
+				type: "address",
+			},
+		],
+		name: "giveMarks",
+		outputs: [],
+		stateMutability: "nonpayable",
+		type: "function",
+	},
+	{
+		inputs: [
+			{
+				internalType: "uint256",
+				name: "classCode",
+				type: "uint256",
+			},
+		],
+		name: "joinClass",
+		outputs: [],
+		stateMutability: "nonpayable",
+		type: "function",
+	},
+	{
+		inputs: [
+			{
+				internalType: "uint256",
+				name: "classCode",
+				type: "uint256",
+			},
+		],
+		name: "leaveClass",
+		outputs: [],
+		stateMutability: "nonpayable",
+		type: "function",
+	},
+	{
 		inputs: [],
 		name: "classIdCounter",
 		outputs: [
@@ -86,29 +163,6 @@ export const ABI = [
 			},
 		],
 		stateMutability: "view",
-		type: "function",
-	},
-	{
-		inputs: [
-			{
-				internalType: "uint256",
-				name: "classCode",
-				type: "uint256",
-			},
-			{
-				internalType: "uint256",
-				name: "assignmentCode",
-				type: "uint256",
-			},
-			{
-				internalType: "string",
-				name: "assignmentCID",
-				type: "string",
-			},
-		],
-		name: "completedAssigment",
-		outputs: [],
-		stateMutability: "nonpayable",
 		type: "function",
 	},
 	{
@@ -356,60 +410,6 @@ export const ABI = [
 			},
 		],
 		stateMutability: "view",
-		type: "function",
-	},
-	{
-		inputs: [
-			{
-				internalType: "uint256",
-				name: "classCode",
-				type: "uint256",
-			},
-			{
-				internalType: "uint256",
-				name: "assignmentCode",
-				type: "uint256",
-			},
-			{
-				internalType: "uint256",
-				name: "marks",
-				type: "uint256",
-			},
-			{
-				internalType: "address",
-				name: "studentAddress",
-				type: "address",
-			},
-		],
-		name: "giveMarks",
-		outputs: [],
-		stateMutability: "nonpayable",
-		type: "function",
-	},
-	{
-		inputs: [
-			{
-				internalType: "uint256",
-				name: "classCode",
-				type: "uint256",
-			},
-		],
-		name: "joinClass",
-		outputs: [],
-		stateMutability: "nonpayable",
-		type: "function",
-	},
-	{
-		inputs: [
-			{
-				internalType: "uint256",
-				name: "classCode",
-				type: "uint256",
-			},
-		],
-		name: "leaveClass",
-		outputs: [],
-		stateMutability: "nonpayable",
 		type: "function",
 	},
 ];

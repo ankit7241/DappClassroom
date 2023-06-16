@@ -1,93 +1,173 @@
 import React, { useState, useEffect } from "react";
 import { styled } from "styled-components";
 import { toast } from "react-toastify";
-
+import { ethers } from "ethers";
+import * as PushAPI from "@pushprotocol/restapi";
+import { CONTRACT_ADDRESS, ABI } from "../../../ContractDetails";
 
 import Input from "./Input";
 import Button from "../../../components/Button";
 import Loading from "../../../components/Loading";
 
-import avatar from "../../../assets/img/placeholder_avatar.png"
+import avatar from "../../../assets/img/placeholder_avatar.png";
 
 export default function Modal({ data, setShowModal, showModal }) {
+	const [loading, setLoading] = useState("");
+	const [msgData, setMsgData] = useState(null);
 
-    const [loading, setLoading] = useState("");
-    const [msgData, setMsgData] = useState(null);
+	const fetchData = async (id) => {
+		try {
+			const { ethereum } = window;
 
-    const fetchData = async (id) => {
-        setLoading(true)
-        //Enter your function here
+			if (ethereum) {
+				const provider = new ethers.providers.Web3Provider(ethereum);
+				const signer = provider.getSigner();
+				const connectedContract = new ethers.Contract(
+					CONTRACT_ADDRESS,
+					ABI,
+					signer
+				);
+				const accounts = await ethereum.request({
+					method: "eth_requestAccounts",
+				});
 
-        setMsgData([
-            {
-                from: "0xbdfC42145aF525009d3eE7027036777Ed96BF6A4",
-                timestamp: "1686508212592",
-                message: `Greetings! 
-There is an update to the assignment for React.js. The fifth task has been made optional. Bonus points will be awarded for completing the same. Feel free to reach out to us via email or leave a comment in the classroom if you have any queries. 
-                
-All the best!
-~Atharv Varshney`,
-            },
-            {
-                from: "0xbdfC42145aF525009d3eE7027036777Ed96BF6A4",
-                timestamp: "1686508212592",
-                message: `Greetings! 
-There is an update to the assignment for React.js. The fifth task has been made optional. Bonus points will be awarded for completing the same. Feel free to reach out to us via email or leave a comment in the classroom if you have any queries. 
-                
-All the best!
-~Atharv Varshney`,
-            },
-            {
-                from: "0xbdfC42145aF525009d3eE7027036777Ed96BF6A4",
-                timestamp: "1686508212592",
-                message: `Greetings! 
-There is an update to the assignment for React.js. The fifth task has been made optional. Bonus points will be awarded for completing the same. Feel free to reach out to us via email or leave a comment in the classroom if you have any queries. 
-                
-All the best!
-~Atharv Varshney`,
-            },
-        ]);
-        setLoading(false)
-    };
+				console.log(data, id);
+				setLoading(true);
 
-    useEffect(() => {
-        // if (data && data.id) {
-        if (data) {
-            (async () => {
-                await fetchData(data);
-            })();
-        }
-    }, [data]);
+				console.log(data.message);
 
-    return (
-        <Container onClick={() => setShowModal(false)}>
-            <Main onClick={(e) => e.stopPropagation()}>
+				const message = data.message;
 
-                {
-                    loading
-                        ? <Loading text="Loading replies..." />
-                        : <>
-                            <h2>All Replies</h2>
+				const startMarker = "****###@@";
+				const endMarker = "####***@@";
 
-                            <Input data={data} />
+				const startIndex = message.indexOf(startMarker) + startMarker.length;
+				const endIndex = message.indexOf(endMarker);
 
-                            <div>
-                                {
-                                    msgData
-                                        ? msgData.length > 0
-                                            ? msgData?.map((item) => {
-                                                return <Message data={item} />;
-                                            })
-                                            : <p style={{ textAlign: "center" }}>No messages found</p>
-                                        : <p style={{ textAlign: "center" }}>No messages found</p>
-                                }
-                            </div>
+				const chatId = message.substring(startIndex, endIndex);
 
-                        </>
-                }
-            </Main>
-        </Container>
-    );
+				const pvtKeyStartIndex = endIndex + endMarker.length;
+				const pvtKey = message.substring(pvtKeyStartIndex);
+
+				console.log("response.chatId:", chatId);
+				console.log("pgpDecryptedPvtKey:", pvtKey);
+
+				console.log(chatId, pvtKey);
+
+				const user = await PushAPI.user.get({
+					account: `eip155:${accounts[0]}`,
+					env: "staging",
+				});
+
+				// need to decrypt the encryptedPvtKey to pass in the api using helper function
+				const pgpDecryptedPvtKey = await PushAPI.chat.decryptPGPKey({
+					encryptedPGPPrivateKey: user.encryptedPrivateKey,
+					signer: signer,
+				});
+
+				// conversation hash are also called link inside chat messages
+				const conversationHash = await PushAPI.chat.conversationHash({
+					account: `${accounts[0]}`,
+					conversationId: `${chatId}`, // receiver's address or chatId of a group
+					env: "staging",
+				});
+
+				// actual api
+				const chatHistory = await PushAPI.chat.history({
+					threadhash: conversationHash.threadHash,
+					account: `${accounts[0]}`,
+					limit: 30,
+					toDecrypt: true,
+					pgpPrivateKey: pgpDecryptedPvtKey,
+					env: "staging",
+				});
+
+				const Data = [];
+
+				chatHistory.forEach((item) => {
+					const from = item.fromCAIP10.slice(7);
+					const timestamp = item.timestamp;
+					const message = item.messageContent;
+
+					const msgObj = {
+						from: `${from}`,
+						timestamp: `${timestamp}`,
+						message: `${message}`,
+					};
+					Data.push(msgObj);
+				});
+				setMsgData(Data);
+				setLoading(false);
+			} else {
+				console.log("Ethereum object doesn't exist!");
+				toast.error("Some problem with Metamask! Please try again", {
+					position: "top-center",
+					autoClose: 3000,
+					hideProgressBar: false,
+					closeOnClick: true,
+					pauseOnHover: true,
+					draggable: true,
+					progress: undefined,
+					theme: "dark",
+				});
+				setLoading(false);
+			}
+		} catch (error) {
+			console.log(error);
+			toast.error("Some error was encountered while sending the message !", {
+				position: "top-center",
+				autoClose: 3000,
+				hideProgressBar: false,
+				closeOnClick: true,
+				pauseOnHover: true,
+				draggable: true,
+				progress: undefined,
+				theme: "dark",
+			});
+			setLoading(false);
+		}
+
+		//Enter your function here
+	};
+
+	useEffect(() => {
+		// if (data && data.id) {
+		if (data) {
+			(async () => {
+				await fetchData(data);
+			})();
+		}
+	}, [data]);
+
+	return (
+		<Container onClick={() => setShowModal(false)}>
+			<Main onClick={(e) => e.stopPropagation()}>
+				{loading ? (
+					<Loading text="Loading replies..." />
+				) : (
+					<>
+						<h2>All Replies</h2>
+
+						<Input data={data} />
+
+						<div>
+							{msgData ? (
+								msgData.length > 0 ? (
+									msgData?.map((item) => {
+										return <Message data={item} />;
+									})
+								) : (
+									<p style={{ textAlign: "center" }}>No messages found</p>
+								)
+							) : (
+								<p style={{ textAlign: "center" }}>No messages found</p>
+							)}
+						</div>
+					</>
+				)}
+			</Main>
+		</Container>
+	);
 }
 
 const Container = styled.div`
@@ -106,8 +186,8 @@ const Container = styled.div`
 const Main = styled.div`
 	z-index: 3;
 	width: 50%;
-    max-height: 90vh;
-    overflow-y: auto;
+	max-height: 90vh;
+	overflow-y: auto;
 	background-color: var(--bg);
 	border: 1px solid rgba(255, 255, 255, 0.3);
 	border-radius: 20px;
@@ -198,78 +278,88 @@ const StyledButton = styled(Button)`
 `;
 
 const Message = ({ data }) => {
+	const shortenAddress = (address, place) => {
+		return address.slice(0, place) + "..." + address.slice(-place);
+	};
 
-    const shortenAddress = (address, place) => {
-        return (address.slice(0, place) + "..." + address.slice(-place))
-    }
-
-    return (
-        <MsgContainer>
-            <MsgTop>
-                <img src={avatar} alt="" />
-                <div>
-                    <p><span title={data.from}>({shortenAddress(data.from, 4)})</span></p>
-                    <p>{new Date(parseInt(data.timestamp)).toLocaleTimeString("en-us", { hour: "2-digit", minute: "2-digit" })} {new Date(parseInt(data.timestamp)).toLocaleString('default', { day: "numeric", month: 'long' })}</p>
-                </div>
-            </MsgTop>
-            <p>{data.message}</p>
-        </MsgContainer>
-    )
-}
+	return (
+		<MsgContainer>
+			<MsgTop>
+				<img src={avatar} alt="" />
+				<div>
+					<p>
+						<span title={data.from}>({shortenAddress(data.from, 4)})</span>
+					</p>
+					<p>
+						{new Date(parseInt(data.timestamp)).toLocaleTimeString("en-us", {
+							hour: "2-digit",
+							minute: "2-digit",
+						})}{" "}
+						{new Date(parseInt(data.timestamp)).toLocaleString("default", {
+							day: "numeric",
+							month: "long",
+						})}
+					</p>
+				</div>
+			</MsgTop>
+			<p>{data.message}</p>
+		</MsgContainer>
+	);
+};
 
 const MsgContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    padding: 15px 20px;
-    gap: 30px;
+	display: flex;
+	flex-direction: column;
+	padding: 15px 20px;
+	gap: 30px;
 
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 15px;
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: 15px;
 
-    & > p {
-        font-weight: 300;
-        font-size: var(--font-sm);
-        line-height: 125%;
-        color: rgba(255, 255, 255, 0.75);
-        white-space: pre-wrap;
-        cursor: default;
-    }
-`
+	& > p {
+		font-weight: 300;
+		font-size: var(--font-sm);
+		line-height: 125%;
+		color: rgba(255, 255, 255, 0.75);
+		white-space: pre-wrap;
+		cursor: default;
+	}
+`;
 
 const MsgTop = styled.div`
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 15px;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 15px;
 
-    img {
-        width: 35px;
-        height: 35px;
-    }
+	img {
+		width: 35px;
+		height: 35px;
+	}
 
-    & > div {
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
-    }
+	& > div {
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+	}
 
-    & > div > p:nth-child(1) {
-        font-weight: 300;
-        font-size: var(--font-md);
-        line-height: 125%;
-        color: rgba(255, 255, 255, 0.66);
+	& > div > p:nth-child(1) {
+		font-weight: 300;
+		font-size: var(--font-md);
+		line-height: 125%;
+		color: rgba(255, 255, 255, 0.66);
 
-        span {
-            font-size: var(--font-sm);
-            color: rgba(255, 255, 255, 0.5);
-        }
-    }
+		span {
+			font-size: var(--font-sm);
+			color: rgba(255, 255, 255, 0.5);
+		}
+	}
 
-    & > div > p:nth-child(2) {
-        font-weight: 300;
-        font-size: var(--font-sm);
-        line-height: 125%;
-        color: rgba(255, 255, 255, 0.33);
-    }
-`
+	& > div > p:nth-child(2) {
+		font-weight: 300;
+		font-size: var(--font-sm);
+		line-height: 125%;
+		color: rgba(255, 255, 255, 0.33);
+	}
+`;

@@ -66,7 +66,7 @@ export default async function sendPushChatMessage(
 
 			// actual api
 			await PushAPI.chat.send({
-				messageContent: `${textInp}****###${response.chatId}`,
+				messageContent: `${textInp} ****###@@${response.chatId}####***@@${pgpDecryptedPvtKey}`,
 				messageType: "Text",
 				receiverAddress: `${data.groupChatId}`,
 				signer: signer,
