@@ -52,7 +52,7 @@ export default function Modal({ id, setShowModal, showModal }) {
 
 				let addAssignment = await connectedContract.addAssignment(
 					id,
-					descriptionCID
+					`${descriptionCID}`
 				);
 
 				await addAssignment.wait();

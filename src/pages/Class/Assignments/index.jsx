@@ -261,7 +261,11 @@ export default function Assignments({ classData }) {
 			) : (
 				<>
 					{showModal && (
-						<Modal showModal={showModal} setShowModal={setShowModal} />
+						<Modal
+							id={classData?.id}
+							showModal={showModal}
+							setShowModal={setShowModal}
+						/>
 					)}
 					<Container>
 						{isLoading ? (
