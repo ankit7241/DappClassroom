@@ -88,7 +88,6 @@ export default function Huddle({ id }) {
 	useEventListner("lobby:initialized", (data) => {
 		iframeApi.initialize({
 			redirectUrlOnLeave: "http://localhost:3002/",
-			wallets: ["metamask"],
 			background:
 				"https://ipfs.io/ipfs/bafybeih57dsp2gopifd7bnghpbr7vx6yxjtoxynlyr27bsc7zyesi4reqe/image.png",
 		});

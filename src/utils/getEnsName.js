@@ -1,10 +1,11 @@
+// import { useEnsName } from "wagmi"
 
-export function getEnsName() {
+export function getEnsName(address, chainId) {
 
-    const { data: EnsNameData } = useEnsName({
-        address: _data?.teacherAddress,
-        chainId: 5
-    })
+    // const { data: EnsNameData } = useEnsName({
+    //     address: address,
+    //     chainId: chainId
+    // })
 
-    return (EnsNameData)
+    // return (EnsNameData)
 }

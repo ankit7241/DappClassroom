@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { styled } from "styled-components";
 import { Link } from "react-router-dom";
-import { useEnsName, useEnsAvatar } from "wagmi";
+// import { useEnsName, useEnsAvatar } from "wagmi";
 
 import leaveClass from "../utils/leaveClass";
 
@@ -9,10 +9,10 @@ import Leave from "../assets/img/leave.svg";
 import Notebook from "../assets/img/notebook.svg";
 
 export default function HomeCard({ _data }) {
-    const { data: EnsNameData } = useEnsName({
-        address: _data?.teacherAddress,
-        chainId: 5,
-    });
+    // const { data: EnsNameData } = useEnsName({
+    //     address: _data?.teacherAddress,
+    //     chainId: 5,
+    // });
 
     const shortenAddress = (address, place) => {
         return address.slice(0, place) + "..." + address.slice(-place);
@@ -30,7 +30,7 @@ export default function HomeCard({ _data }) {
                 </Link>
                 <h4>{_data.section}</h4>
                 <p>
-                    {EnsNameData ? (
+                    {/* {EnsNameData ? (
                         <>
                             {_data.teacherName}{" "}
                             <span title={_data.teacherAddress}>({EnsNameData})</span>
@@ -42,7 +42,13 @@ export default function HomeCard({ _data }) {
                                 ({shortenAddress(_data.teacherAddress, 4)})
                             </span>
                         </>
-                    )}
+                    )} */}
+                    <>
+                        {_data.teacherName}{" "}
+                        <span title={_data.teacherAddress}>
+                            ({shortenAddress(_data.teacherAddress, 4)})
+                        </span>
+                    </>
                 </p>
             </Top>
             <Middle>

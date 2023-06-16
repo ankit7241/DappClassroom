@@ -1,16 +1,17 @@
 import React from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useEnsName, useAccount } from 'wagmi'
+import { useAccount } from 'wagmi'
+// import { useEnsName, useAccount } from 'wagmi'
 import Button from './Button';
 
 export default function ConnectWalletButton() {
 
     const { address } = useAccount();
 
-    const { data: EnsNameData } = useEnsName({
-        address: address,
-        chainId: 5
-    })
+    // const { data: EnsNameData } = useEnsName({
+    //     address: address,
+    //     chainId: 5
+    // })
 
     return (
         <ConnectButton.Custom>
@@ -62,7 +63,8 @@ export default function ConnectWalletButton() {
                             return (
                                 <div style={{ display: 'flex', gap: 12 }}>
                                     <Button onClick={openAccountModal} type="button" title={account.address}>
-                                        {EnsNameData ? EnsNameData : account.displayName}
+                                        {/* {EnsNameData ? EnsNameData : account.displayName} */}
+                                        {account.displayName}
                                         {account.displayBalance
                                             ? ` (${account.displayBalance})`
                                             : ''}

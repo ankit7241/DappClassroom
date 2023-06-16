@@ -3,7 +3,6 @@ import { styled } from "styled-components";
 
 import Button from "../Button";
 import createClass from "../../utils/createClass";
-import joinClass from "../../utils/joinClass";
 
 export default function Modal({ setShowModal, showModal }) {
 	const [className, setClassName] = useState("");
@@ -25,7 +24,7 @@ export default function Modal({ setShowModal, showModal }) {
 	};
 
 	const handleJoin = async () => {
-		await joinClass(code, setLoadJoinMessage, setShowModal);
+		await createClass(setLoadJoinMessage, setShowModal);
 	};
 
 	return (
