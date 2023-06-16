@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { styled } from 'styled-components';
 // import { useAccount, useEnsAvatar, useEnsName } from 'wagmi';
 
-import Button from '../../components/Button';
+import Modal from "./Modal"
 
-import avatar from "../../assets/img/placeholder_avatar.png"
+import avatar from "../../../assets/img/placeholder_avatar.png"
 
 export default function Message({ data }) {
 
@@ -22,10 +22,21 @@ export default function Message({ data }) {
         return (address.slice(0, place) + "..." + address.slice(-place))
     }
 
-    const [textInp, setTextInp] = useState("")
+    const [showModal, setShowModal] = useState("")
+
+    // On toggle of Modal, change the scroll mode of body
+    useEffect(() => {
+        if (showModal) {
+            window.scroll(0, 0)
+            document.body.style.overflowY = "hidden";
+        } else {
+            document.body.style.overflowY = "scroll";
+        }
+    }, [showModal]);
 
     return (
         <Container>
+            {showModal && <Modal data={data} showModal={showModal} setShowModal={setShowModal} />}
             <Top>
                 {/* <img src={EnsAvatarData ? EnsAvatarData : avatar} alt="" /> */}
                 <img src={avatar} alt="" />
@@ -40,6 +51,7 @@ export default function Message({ data }) {
                 </div>
             </Top>
             <p>{data.message}</p>
+            <p onClick={() => { setShowModal(true) }}>View replies →</p>
         </Container>
     )
 }
@@ -61,6 +73,20 @@ const Container = styled.div`
         color: rgba(255, 255, 255, 0.75);
         white-space: pre-wrap;
         cursor: default;
+    }
+
+    & > p:nth-last-child(1) {
+        font-weight: 400;
+        font-size: var(--font-sm);
+        line-height: 125%;
+        color: rgba(255, 255, 255, 0.5);
+        cursor: pointer;
+        transition: all 0.2s linear;
+
+        &:hover {
+            letter-spacing: 0.07em;
+            color: rgba(255, 255, 255, 0.75);
+        }
     }
 `
 
