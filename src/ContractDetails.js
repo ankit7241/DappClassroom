@@ -1,4 +1,4 @@
-export const CONTRACT_ADDRESS = "0xb38873Ced8F8791871A5E4B6B12ab246DC7CF3D3";
+export const CONTRACT_ADDRESS = "0x6583637B7EA88b5C629F75F41AF610a162a8a1d5";
 
 export const ABI = [
 	{
@@ -35,6 +35,24 @@ export const ABI = [
 				type: "uint256",
 			},
 		],
+		stateMutability: "nonpayable",
+		type: "function",
+	},
+	{
+		inputs: [
+			{
+				internalType: "uint256",
+				name: "classCode",
+				type: "uint256",
+			},
+			{
+				internalType: "string",
+				name: "meetCode",
+				type: "string",
+			},
+		],
+		name: "changeMeetCode",
+		outputs: [],
 		stateMutability: "nonpayable",
 		type: "function",
 	},
@@ -193,6 +211,25 @@ export const ABI = [
 				internalType: "bool",
 				name: "",
 				type: "bool",
+			},
+		],
+		stateMutability: "view",
+		type: "function",
+	},
+	{
+		inputs: [
+			{
+				internalType: "uint256",
+				name: "classCode",
+				type: "uint256",
+			},
+		],
+		name: "getClassMeetCode",
+		outputs: [
+			{
+				internalType: "string",
+				name: "",
+				type: "string",
 			},
 		],
 		stateMutability: "view",

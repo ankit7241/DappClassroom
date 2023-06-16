@@ -19,6 +19,8 @@ contract DappClassroom {
 
         address[] students;
 
+        string meetCode;
+
         bool classExists;
 
     }
@@ -90,13 +92,19 @@ contract DappClassroom {
 
     }
 
+    function changeMeetCode(uint256 classCode, string memory meetCode) public{
+
+        require(classes[classCode].classExists == true,"Class does not exist");
+        classes[classCode].meetCode = meetCode;
+           
+    }
+
     function joinClass(uint256 classCode) public{
 
         require(classes[classCode].classExists == true,"Class does not exist");
         users[msg.sender].classCodes.push(classCode);
         classes[classCode].students.push(msg.sender);
-        
-        
+           
     }
 
     function leaveClass(uint256 classCode) public{
@@ -181,6 +189,13 @@ contract DappClassroom {
         require(classes[classCode].classExists == true,"Class does not exist");
 
         return classes[classCode].students;
+    }
+
+    function getClassMeetCode(uint256 classCode) public view returns(string memory){
+
+        require(classes[classCode].classExists == true,"Class does not exist");
+
+        return classes[classCode].meetCode;
     }
 
 

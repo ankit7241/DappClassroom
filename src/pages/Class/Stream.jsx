@@ -10,118 +10,134 @@ import Message from "./Message";
 import CopyIcon from "../../assets/img/copy.svg";
 import Loading from "../../components/Loading";
 import Button from "../../components/Button";
+import Huddle from "./Huddle";
 
 export default function Stream({ classData }) {
-    const shortenAddress = (address, place) => {
-        return address?.slice(0, place) + "..." + address?.slice(-place);
-    };
+	const [isMeetOpen, setIsMeetOpen] = useState(false);
 
-    const handleCopy = (txt) => {
-        navigator.clipboard.writeText(txt);
-        toast.success("Class code copied successfully", {
-            position: "top-center",
-            autoClose: 3000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-            theme: "dark",
-        });
-    };
+	const shortenAddress = (address, place) => {
+		return address?.slice(0, place) + "..." + address?.slice(-place);
+	};
 
-    const [loading, setLoading] = useState(null);
-    const [msgData, setMsgData] = useState(null);
+	const handleCopy = (txt) => {
+		navigator.clipboard.writeText(txt);
+		toast.success("Class code copied successfully", {
+			position: "top-center",
+			autoClose: 3000,
+			hideProgressBar: false,
+			closeOnClick: true,
+			pauseOnHover: true,
+			draggable: true,
+			progress: undefined,
+			theme: "dark",
+		});
+	};
 
-    const fetchData = async (id) => {
-        const chatHistory = await getChatHistory(id, setLoading);
-        if (chatHistory.status === "Success") {
-            setMsgData(chatHistory.data)
-        }
-        else {
-            toast.error(chatHistory.data.msg, {
-                position: "top-center",
-                autoClose: 3000,
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: "dark",
-            });
-        }
-    };
+	const [loading, setLoading] = useState(null);
+	const [msgData, setMsgData] = useState(null);
 
-    useEffect(() => {
-        if (classData && classData.id) {
-            (async () => {
-                await fetchData(classData.id);
-            })();
-        }
-    }, [classData]);
+	const fetchData = async (id) => {
+		const chatHistory = await getChatHistory(id, setLoading);
+		if (chatHistory.status === "Success") {
+			setMsgData(chatHistory.data);
+		} else {
+			toast.error(chatHistory.data.msg, {
+				position: "top-center",
+				autoClose: 3000,
+				hideProgressBar: false,
+				closeOnClick: true,
+				pauseOnHover: true,
+				draggable: true,
+				progress: undefined,
+				theme: "dark",
+			});
+		}
+	};
 
-    return (
-        <Container>
-            <Top>
-                <h2>{classData?.className}</h2>
-                <h4>{classData?.section}</h4>
-                <p>
-                    {classData?.teacherName}{" "}
-                    <span>({shortenAddress(classData?.teacherAddress, 4)})</span>
-                </p>
-            </Top>
+	useEffect(() => {
+		if (classData && classData.id) {
+			(async () => {
+				await fetchData(classData.id);
+			})();
+		}
+	}, [classData]);
 
-            <Main>
-                <Left>
-                    <CodeDiv>
-                        <h3>Class code</h3>
-                        <div onClick={() => handleCopy(classData?.id)}>
-                            <p>{classData?.id}</p>
-                            <img src={CopyIcon} alt="" />
-                        </div>
-                    </CodeDiv>
+	return (
+		<Container>
+			<Top>
+				<h2>{classData?.className}</h2>
+				<h4>{classData?.section}</h4>
+				<p>
+					{classData?.teacherName}{" "}
+					<span>({shortenAddress(classData?.teacherAddress, 4)})</span>
+				</p>
+			</Top>
 
-                    <AssignmentsDiv>
-                        <h3>Upcoming</h3>
+			<Main>
+				<Left>
+					<CodeDiv>
+						<h3>Class code</h3>
+						<div onClick={() => handleCopy(classData?.id)}>
+							<p>{classData?.id}</p>
+							<img src={CopyIcon} alt="" />
+						</div>
+					</CodeDiv>
 
-                        {classData?.assignments?.map((item, ind) => {
-                            return (
-                                <div key={ind}>
-                                    <p>
-                                        Due{" "}
-                                        {new Date(parseInt(item.deadline)).toLocaleString(
-                                            "default",
-                                            { day: "numeric", month: "long" }
-                                        )}
-                                    </p>
-                                    <h4>
-                                        {item.name.length > 15
-                                            ? item.name.slice(0, 15) + "..."
-                                            : item.name}
-                                    </h4>
-                                </div>
-                            );
-                        })}
-                    </AssignmentsDiv>
-                </Left>
+					<AssignmentsDiv>
+						<Button
+							onClick={() => {
+								setIsMeetOpen(true);
+							}}
+						>
+							Meet
+						</Button>
 
-                <Right>
-                    {
-                        loading
-                            ? <Loading text="Sign messages to load chat history..." />
-                            : msgData
-                                ? <>
-                                    <Input classData={classData} />
-                                    {msgData?.map((item) => {
-                                        return <Message data={item} />;
-                                    })}
-                                </>
-                                : <Button onClick={async () => { await fetchData(classData.id) }}>Load Messages</Button>
-                    }
-                </Right>
-            </Main>
-        </Container>
-    );
+						{classData?.assignments?.map((item, ind) => {
+							return (
+								<div key={ind}>
+									<p>
+										Due{" "}
+										{new Date(parseInt(item.deadline)).toLocaleString(
+											"default",
+											{ day: "numeric", month: "long" }
+										)}
+									</p>
+									<h4>
+										{item.name.length > 15
+											? item.name.slice(0, 15) + "..."
+											: item.name}
+									</h4>
+								</div>
+							);
+						})}
+					</AssignmentsDiv>
+				</Left>
+
+				<Right>
+					{loading ? (
+						<Loading text="Sign messages to load chat history..." />
+					) : msgData ? (
+						<>
+							<Input classData={classData} />
+							{msgData?.map((item) => {
+								return <Message data={item} />;
+							})}
+						</>
+					) : (
+						<Button
+							onClick={async () => {
+								await fetchData(classData.id);
+							}}
+						>
+							Load Messages
+						</Button>
+					)}
+				</Right>
+			</Main>
+
+			{isMeetOpen && <Huddle id={classData?.id ?? ""} />}
+		</Container>
+	);
 }
 
 const Container = styled.div`
