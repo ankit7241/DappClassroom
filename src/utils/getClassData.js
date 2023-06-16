@@ -94,7 +94,7 @@ export default async function FetchClassData(id) {
 
                             if (
                                 userClassIdArray[j] === BigNumber.from(classIdCount).toNumber() ||
-                                accounts[0] === `${classTeacherAddress}`
+                                accounts[0].toLowerCase() === classTeacherAddress.toLowerCase()
                             ) {
                                 let classDescCID;
 

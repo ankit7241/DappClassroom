@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { styled } from "styled-components";
-import { useAccount, useEnsAvatar, useEnsName } from "wagmi";
+import { useAccount } from "wagmi";
+// import { useAccount, useEnsAvatar, useEnsName } from "wagmi";
 import { toast } from "react-toastify";
 import { ethers } from "ethers";
 import * as PushAPI from "@pushprotocol/restapi";
@@ -14,13 +15,13 @@ import sendPushChatMessage from "../../utils/sendPushChatMessage";
 export default function Input({ classData }) {
     const { address } = useAccount();
 
-    const { data: EnsNameData } = useEnsName({
-        address: address,
-    });
+    // const { data: EnsNameData } = useEnsName({
+    //     address: address,
+    // });
 
-    const { data: EnsAvatarData } = useEnsAvatar({
-        name: EnsNameData,
-    });
+    // const { data: EnsAvatarData } = useEnsAvatar({
+    //     name: EnsNameData,
+    // });
 
     const [loadMsg, setLoadMsg] = useState(null);
     const [textInp, setTextInp] = useState("");
@@ -31,7 +32,8 @@ export default function Input({ classData }) {
 
     return (
         <Container>
-            <img src={EnsAvatarData ? EnsAvatarData : avatar} alt="" />
+            {/* <img src={EnsAvatarData ? EnsAvatarData : avatar} alt="" /> */}
+            <img src={avatar} alt="" />
             <div>
                 <textarea
                     type="text"

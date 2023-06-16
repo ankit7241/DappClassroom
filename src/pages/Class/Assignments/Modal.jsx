@@ -1,77 +1,50 @@
 import React, { useState } from "react";
 import { styled } from "styled-components";
 
-import Button from "../Button";
-import createClass from "../../utils/createClass";
-import joinClass from "../../utils/joinClass";
+import Button from "../../../components/Button";
 
 export default function Modal({ setShowModal, showModal }) {
-    const [className, setClassName] = useState("");
-    const [section, setSection] = useState("");
-    const [teacherName, setTeacherName] = useState("");
+    const [assignmentName, setAssignmentName] = useState("");
+    const [assignmentDesc, setAssignmentDesc] = useState("");
+    const [assignmentFile, setAssignmentFile] = useState("");
 
-    const [code, setCode] = useState("");
-    const [loadCreateMessage, setLoadCreateMessage] = useState(null);
-    const [loadJoinMessage, setLoadJoinMessage] = useState(null);
+    const [loadMessage, setLoadMessage] = useState(null);
 
 
     const handleCreate = async () => {
-        await createClass(className, section, teacherName, setLoadCreateMessage, setShowModal)
-    };
 
-    const handleJoin = async () => {
-        await joinClass(code, setLoadJoinMessage, setShowModal)
     };
 
     return (
         <Container onClick={() => setShowModal(false)}>
             <Main onClick={(e) => e.stopPropagation()}>
-                <h2>Add class</h2>
+                <h2>Add Assignment</h2>
 
                 <div>
                     <input
                         type="text"
-                        placeholder="Class Name e.g. Computer Science Club"
-                        value={className}
-                        onChange={(e) => setClassName(e.target.value)}
+                        placeholder="Assignment Name"
+                        value={assignmentName}
+                        onChange={(e) => setAssignmentName(e.target.value)}
+                    />
+                    <textarea
+                        type="text"
+                        placeholder="Enter assignment description"
+                        value={assignmentDesc}
+                        onChange={(e) => setAssignmentDesc(e.target.value)}
                     />
                     <input
-                        type="text"
-                        placeholder="Section e.g. H"
-                        value={section}
-                        onChange={(e) => setSection(e.target.value)}
+                        type="file"
+                        placeholder="Upload assignment file"
+                        accept="image/png, image/jpeg"
+                        onChange={(e) => setAssignmentFile(e.target.files[0])}
                     />
-                    <input
-                        type="text"
-                        placeholder="Teacher Name e.g. Atharv Varshney"
-                        value={teacherName}
-                        onChange={(e) => setTeacherName(e.target.value)}
-                    />
+
                     <StyledButton onClick={handleCreate}>
                         {
-                            loadCreateMessage
-                                ? <>{loadCreateMessage} <Loader /></>
-                                : "Create Class"
-                        }
-                    </StyledButton>
-                </div>
-
-                <Divider>
-                    <p>OR</p>
-                </Divider>
-
-                <div>
-                    <input
-                        type="text"
-                        placeholder="Enter Class Code e.g. 50786"
-                        value={code}
-                        onChange={(e) => setCode(e.target.value)}
-                    />
-                    <StyledButton onClick={handleJoin}>
-                        {
-                            loadJoinMessage
-                                ? <>{loadJoinMessage} <Loader /></>
-                                : "Join Class"
+                            loadMessage
+                                ? <>{loadMessage} <Loader /></>
+                                : "Create assignment"
                         }
                     </StyledButton>
                 </div>
@@ -90,9 +63,11 @@ const Container = styled.div`
 	display: flex;
 	justify-content: center;
 	align-items: center;
-`;
+    z-index: 2;
+    `;
 
 const Main = styled.div`
+    z-index: 3;
 	width: 50%;
 	background-color: var(--bg);
 	border: 1px solid rgba(255, 255, 255, 0.3);
@@ -119,7 +94,7 @@ const Main = styled.div`
 		flex-direction: column;
 		gap: 15px;
 
-		input {
+		input, textarea {
 			display: flex;
 			flex-direction: row;
 			align-items: center;
@@ -136,6 +111,11 @@ const Main = styled.div`
 			line-height: 125%;
 			color: rgba(255, 255, 255, 0.8);
 		}
+
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
 	}
 
 	p {

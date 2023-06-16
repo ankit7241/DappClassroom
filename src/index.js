@@ -14,7 +14,7 @@ import { infuraProvider } from 'wagmi/providers/infura';
 const { chains, publicClient, webSocketPublicClient } = configureChains(
     [
         filecoin,
-        filecoinCalibration,
+        filecoinCalibration
     ],
     [infuraProvider({ apiKey: process.env.REACT_APP_INFURA_API_KEY }), publicProvider()]
 );

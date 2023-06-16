@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { styled } from 'styled-components';
-import { useAccount, useEnsAvatar, useEnsName } from 'wagmi';
+// import { useAccount, useEnsAvatar, useEnsName } from 'wagmi';
 
 import Button from '../../components/Button';
 
@@ -8,15 +8,15 @@ import avatar from "../../assets/img/placeholder_avatar.png"
 
 export default function Message({ data }) {
 
-    const { data: EnsNameData } = useEnsName({
-        address: data.from,
-        chainId: 5
-    })
+    // const { data: EnsNameData } = useEnsName({
+    //     address: data.from,
+    //     chainId: 5
+    // })
 
-    const { data: EnsAvatarData } = useEnsAvatar({
-        name: data.from,
-        chainId: 5
-    })
+    // const { data: EnsAvatarData } = useEnsAvatar({
+    //     name: data.from,
+    //     chainId: 5
+    // })
 
     const shortenAddress = (address, place) => {
         return (address.slice(0, place) + "..." + address.slice(-place))
@@ -27,12 +27,14 @@ export default function Message({ data }) {
     return (
         <Container>
             <Top>
-                <img src={EnsAvatarData ? EnsAvatarData : avatar} alt="" />
+                {/* <img src={EnsAvatarData ? EnsAvatarData : avatar} alt="" /> */}
+                <img src={avatar} alt="" />
                 <div>
                     <p>{
-                        EnsNameData
-                            ? <>{data.fromName} <span title={data.from}>({EnsNameData})</span></>
-                            : <>{data.fromName} <span title={data.from}>({shortenAddress(data.from, 4)})</span></>
+                        // EnsNameData
+                        //     ? <>{data.fromName} <span title={data.from}>({EnsNameData})</span></>
+                        //     : <>{data.fromName} <span title={data.from}>({shortenAddress(data.from, 4)})</span></>
+                        <>{data.fromName} <span title={data.from}>({shortenAddress(data.from, 4)})</span></>
                     }</p>
                     <p>{new Date(parseInt(data.timestamp)).toLocaleTimeString("en-us", { hour: "2-digit", minute: "2-digit" })} {new Date(parseInt(data.timestamp)).toLocaleString('default', { day: "numeric", month: 'long' })}</p>
                 </div>
