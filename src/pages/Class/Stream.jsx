@@ -88,33 +88,35 @@ export default function Stream({ classData }) {
                     </CodeDiv>
 
                     <AssignmentsDiv>
-                        <Button
-                            onClick={() => {
-                                setIsMeetOpen(true);
-                            }}
-                        >
-                            Meet
-                        </Button>
-
-                        {classData?.assignments?.map((item, ind) => {
-                            return (
-                                <div key={ind}>
-                                    <p>
-                                        Due{" "}
-                                        {new Date(parseInt(item.deadline)).toLocaleString(
-                                            "default",
-                                            { day: "numeric", month: "long" }
-                                        )}
-                                    </p>
-                                    <h4>
-                                        {item.name.length > 15
-                                            ? item.name.slice(0, 15) + "..."
-                                            : item.name}
-                                    </h4>
-                                </div>
-                            );
-                        })}
+                        <h3>Upcoming</h3>
+                        {
+                            classData?.assignments?.length > 0
+                                ? classData.assignments.map((item, ind) => {
+                                    return (
+                                        <div key={ind}>
+                                            <p>
+                                                Due{" "}
+                                                {new Date(parseInt(item.deadline)).toLocaleString(
+                                                    "default",
+                                                    { day: "numeric", month: "long" }
+                                                )}
+                                            </p>
+                                            <h4>
+                                                {item.name.length > 15
+                                                    ? item.name.slice(0, 15) + "..."
+                                                    : item.name}
+                                            </h4>
+                                        </div>
+                                    );
+                                })
+                                : <p>You're all caught up! No assignments found.</p>
+                        }
                     </AssignmentsDiv>
+
+                    <CodeDiv>
+                        <h3>Class meeting</h3>
+                        <Button style={{ padding: "7px 0px" }} onClick={() => setIsMeetOpen(true)}>Open meet</Button>
+                    </CodeDiv>
                 </Left>
 
                 <Right>
@@ -133,13 +135,16 @@ export default function Stream({ classData }) {
                                         <Input classData={classData} />
                                         <p style={{ textAlign: "center" }}>No messages found</p>
                                     </>
-                                : <Button
-                                    onClick={async () => {
-                                        await fetchData(classData.id);
-                                    }}
-                                >
-                                    Load Messages
-                                </Button>
+                                : <>
+                                    <Input classData={classData} />
+                                    <Button
+                                        onClick={async () => {
+                                            await fetchData(classData.id);
+                                        }}
+                                    >
+                                        Load Messages
+                                    </Button>
+                                </>
 
                     }
                 </Right>
@@ -288,4 +293,12 @@ const AssignmentsDiv = styled.div`
 			color: rgba(255, 255, 255, 1);
 		}
 	}
+
+    p {
+        font-weight: 300;
+		font-size: var(--font-sm);
+		line-height: 125%;
+        letter-spacing: 0.1em;
+		color: rgba(255, 255, 255, 0.5);
+    }
 `;
