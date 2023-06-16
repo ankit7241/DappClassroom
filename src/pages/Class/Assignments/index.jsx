@@ -9,6 +9,7 @@ import Loading from "../../../components/Loading"
 import { ReactComponent as Plus } from "../../../assets/img/plus.svg"
 
 import Modal from "./Modal"
+import AssignmentDetail from './AssignmentDetail';
 
 export default function Assignments({ classData }) {
 
@@ -16,23 +17,69 @@ export default function Assignments({ classData }) {
     const [isUserTeacher, setIsUserTeacher] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedAssignment, setSelectedAssignment] = useState(null)
 
     const fetchData = async (id) => {
         setIsLoading(true)
         setAssignments(
             [
-                { deadline: "1689532200000", name: "Assignment name #1", submitted: false },
-                { deadline: "1689705000000", name: "Assignment name #2", submitted: true },
-                { deadline: "1690123400000", name: "Assignment name #3", submitted: false },
+                {
+                    deadline: "1689532200000",
+                    name: "Assignment name #1",
+                    description: "This is the description",
+                    assignment: "Please set a File here",
+                    maxMarks: "100",
+                    scroredMarks: null,
+                    assigned: true,
+                    completed: false,
+                    marked: false,
+                },
+                {
+                    deadline: "1689532200000",
+                    name: "Assignment name #1",
+                    description: "This is the description",
+                    assignment: "Please set a File here",
+                    maxMarks: "100",
+                    scroredMarks: null,
+                    assigned: false,
+                    completed: true,
+                    marked: false,
+                },
+                {
+                    deadline: "1689532200000",
+                    name: "Assignment name #1",
+                    description: "This is the description",
+                    assignment: "Please set a File here",
+                    maxMarks: "100",
+                    scroredMarks: "80",
+                    assigned: false,
+                    completed: false,
+                    marked: true,
+                },
+                {
+                    deadline: "1629532200000",
+                    name: "Assignment name #1",
+                    description: "This is the description",
+                    assignment: "Please set a File here",
+                    maxMarks: "100",
+                    scroredMarks: null,
+                    assigned: false,
+                    completed: false,
+                    marked: false,
+                },
             ],
         )
         setIsLoading(false)
     }
 
+
     useEffect(() => {
+        // Fetching assignments data
         (async () => {
             await fetchData(classData?.id);
         })();
+
+        // Checking if the user is a teacher
         (async () => {
             const temp = await isTeacher(classData?.id);
             console.log(temp.data.data)
@@ -57,6 +104,7 @@ export default function Assignments({ classData }) {
         })();
     }, [classData]);
 
+
     // On toggle of Modal, change the scroll mode of body
     useEffect(() => {
         if (showModal) {
@@ -69,71 +117,97 @@ export default function Assignments({ classData }) {
 
 
     return (
-        <>
-            {showModal && <Modal showModal={showModal} setShowModal={setShowModal} />}
-            <Container>
+        <>{selectedAssignment
+            ? <AssignmentDetail data={selectedAssignment} isUserTeacher={isUserTeacher} />
+            : <>
+                {showModal && <Modal showModal={showModal} setShowModal={setShowModal} />}
+                <Container>
 
-
-                {
-                    isLoading
+                    {isLoading
                         ? <Loading />
                         : <Main>
                             {
-                                isUserTeacher
-                                    ? <TopDiv>
-                                        <Button onClick={() => setShowModal(true)}>
-                                            <Plus />
-                                            Create Assignment
-                                        </Button>
-                                    </TopDiv>
-                                    : undefined
+                                isUserTeacher &&
+                                <TopDiv>
+                                    <Button onClick={() => setShowModal(true)}>
+                                        <Plus />
+                                        Create Assignment
+                                    </Button>
+                                </TopDiv>
                             }
 
                             <TileList>
-                                {
-                                    assignments && assignments.length > 0
-                                        ? assignments.map((item, ind) => {
-                                            return (
-                                                <AssignmentTile key={ind}>
-                                                    <div>
-                                                        {
-                                                            item.submitted
-                                                                ? <div green="true"></div>
-                                                                : new Date().getTime() < parseInt(item.deadline)
-                                                                    ? <div yellow="true"></div>
-                                                                    : <div red="true"></div>
-                                                        }
-                                                        <p>{item.name}</p>
-                                                    </div>
+                                {assignments && assignments.length > 0
+                                    ? assignments.map((item, ind) => {
+                                        return (
+                                            <AssignmentTile key={ind}>
+                                                <div>
+                                                    {
+                                                        item.marked
+                                                            ? <div green="true"></div>
+                                                            : item.completed
+                                                                ? <div yellow="true"></div>
+                                                                : item.assigned
+                                                                    ? <div pink="true"></div>
+                                                                    : new Date().getTime() > parseInt(item.deadline)
+                                                                        ? <div red="true"></div>
+                                                                        : null
+                                                    }
+                                                    <p>{item.name}</p>
+                                                </div>
 
-                                                    <p>
-                                                        Due{" "}
-                                                        {new Date(parseInt(item.deadline)).toLocaleTimeString("en-us", { hour: "2-digit", minute: "2-digit" })} {new Date(parseInt(item.deadline)).toLocaleString('default', { day: "numeric", month: 'long' })}
-                                                    </p>
+                                                <p>
+                                                    {
+                                                        item.marked
+                                                            ? `Scored ${item.scroredMarks}/${item.maxMarks}`
+                                                            : <>
+                                                                Due{" "}
+                                                                {new Date(parseInt(item.deadline)).toLocaleTimeString("en-us", { hour: "2-digit", minute: "2-digit" })} {new Date(parseInt(item.deadline)).toLocaleString('default', { day: "numeric", month: 'long' })}
+                                                            </>
+                                                    }
+                                                </p>
 
-                                                    <div style={{ justifyContent: "flex-end" }}>
-                                                        {
-                                                            item.submitted
-                                                                ? <Button data-btn-type="view">View Work</Button>
-                                                                : new Date().getTime() < parseInt(item.deadline)
-                                                                    ? <Button data-btn-type="upload">Upload Work</Button>
-                                                                    : <p>Deadline exceeded</p>
-                                                        }
-                                                    </div>
+                                                <div style={{ justifyContent: "flex-end" }}>
+                                                    {
+                                                        item.marked
+                                                            ? <Button
+                                                                data-btn-type="view"
+                                                                onClick={() => { setSelectedAssignment(item) }}
+                                                            >
+                                                                View Work
+                                                            </Button>
+                                                            : item.completed
+                                                                ? <Button
+                                                                    data-btn-type="view"
+                                                                    onClick={() => { setSelectedAssignment(item) }}
+                                                                >
+                                                                    View Work
+                                                                </Button>
+                                                                : item.assigned
+                                                                    ? <Button
+                                                                        data-btn-type="upload"
+                                                                        onClick={() => { setSelectedAssignment(item) }}
+                                                                    >
+                                                                        Upload Work
+                                                                    </Button>
+                                                                    : new Date().getTime() > parseInt(item.deadline)
+                                                                        ? <p>Deadline exceeded</p>
+                                                                        : null
+                                                    }
+                                                </div>
 
-                                                </AssignmentTile>
-                                            )
-                                        })
+                                            </AssignmentTile>
+                                        )
+                                    })
 
-                                        : <p>No assignments assigned to you yet</p>
-                                }
+                                    : <p>No assignments assigned to you yet</p>}
                             </TileList>
 
-                        </Main>
-                }
+                        </Main>}
 
-            </Container>
-        </>
+                </Container>
+            </>
+        } </>
     )
 }
 
@@ -242,6 +316,9 @@ const AssignmentTile = styled.div`
         }
         & > div[red="true"] {
             background: var(--red);
+        }
+        & > div[pink="true"] {
+            background: var(--pink);
         }
 
         & > p {

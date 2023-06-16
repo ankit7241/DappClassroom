@@ -2,12 +2,8 @@ import React, { useState } from "react";
 import { styled } from "styled-components";
 import { useAccount } from "wagmi";
 // import { useAccount, useEnsAvatar, useEnsName } from "wagmi";
-import { toast } from "react-toastify";
-import { ethers } from "ethers";
-import * as PushAPI from "@pushprotocol/restapi";
 
 import Button from "../../components/Button";
-import { CONTRACT_ADDRESS, ABI } from "../../ContractDetails";
 
 import avatar from "../../assets/img/placeholder_avatar.png";
 import sendPushChatMessage from "../../utils/sendPushChatMessage";
