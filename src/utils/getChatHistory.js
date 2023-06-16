@@ -88,6 +88,9 @@ export default async function getChatHistory(id, setLoading) {
         if (error.toString().includes("user rejected signing")) {
             return { status: "Error", data: { err: error, msg: "Please sign messages to load chat history!!" } };
         }
+        else if (error.toString().includes("Request failed with status code 400")) {
+            return { status: "Error", data: { err: error, msg: "No Messages Found!" } };
+        }
         else {
             return { status: "Error", data: { err: error, msg: "Unexpected error occurred!" } };
         }

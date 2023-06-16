@@ -145,7 +145,7 @@ export default async function FetchClassData(id) {
     } catch (e) {
         console.error(e);
 
-        if (e.error.data.message.includes("Create class or join one")) {
+        if (e.error?.data?.message?.includes("Create class or join one")) {
             return { status: "Error", data: { err: e, msg: "You are not enrolled in any classroom!" } };
         }
         else {

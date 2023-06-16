@@ -7,12 +7,20 @@ export default function Modal({ setShowModal, showModal }) {
     const [assignmentName, setAssignmentName] = useState("");
     const [assignmentDesc, setAssignmentDesc] = useState("");
     const [assignmentFile, setAssignmentFile] = useState("");
+    const [deadline, setDeadline] = useState(new Date().toISOString().split(":")[0] + ":00");
+    const [marks, setMarks] = useState(new Date().toISOString().split(":")[0] + ":00");
 
     const [loadMessage, setLoadMessage] = useState(null);
 
 
     const handleCreate = async () => {
+        console.log(assignmentName)
+        console.log(assignmentDesc)
+        console.log(assignmentFile)
+        console.log(new Date(deadline).getTime())
+        console.log(marks)
 
+        // Add your function here
     };
 
     return (
@@ -39,6 +47,20 @@ export default function Modal({ setShowModal, showModal }) {
                         accept="image/png, image/jpeg"
                         onChange={(e) => setAssignmentFile(e.target.files[0])}
                     />
+                    <div>
+                        <input
+                            type="datetime-local"
+                            placeholder="Select Deadline"
+                            value={deadline}
+                            onChange={(e) => setDeadline(e.target.value)}
+                        />
+                        <input
+                            type="number"
+                            placeholder="Maximum marks"
+                            value={marks}
+                            onChange={(e) => setMarks(e.target.value)}
+                        />
+                    </div>
 
                     <StyledButton onClick={handleCreate}>
                         {
@@ -116,6 +138,19 @@ const Main = styled.div`
             height: 100px;
             resize: vertical;
         }
+
+        div {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+
+            input {
+                flex: 1;
+            }
+        }
 	}
 
 	p {
@@ -126,34 +161,6 @@ const Main = styled.div`
 		text-align: center;
 		position: relative;
 		z-index: 3;
-	}
-`;
-
-const Divider = styled.div`
-	width: 75%;
-	position: relative;
-	&::before {
-		z-index: 2;
-		content: "";
-		position: absolute;
-		left: 50%;
-		top: 0;
-		transform: translateX(-50%);
-		width: 4ch;
-		height: 100%;
-		background-color: var(--bg);
-	}
-
-	&::after {
-		z-index: 1;
-		content: "";
-		position: absolute;
-		left: 0;
-		top: 50%;
-		transform: translateY(-50%);
-		width: 100%;
-		height: 2px;
-		background-color: rgba(255, 255, 255, 0.3);
 	}
 `;
 const StyledButton = styled(Button)`

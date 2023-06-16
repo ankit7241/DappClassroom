@@ -9,13 +9,15 @@ import Loading from "../../components/Loading";
 import Button from "../../components/Button";
 import ConnectWalletFallback from "../../components/ConnectWalletFallback";
 
-import NoClassSvg from "../../assets/img/no_class.svg"
+import NoClassSvg from "../../assets/img/no_class.svg";
+import Modal from "../../components/AddClass/Modal";
 
 export default function Home() {
     const { isConnected } = useAccount();
 
     const [classes, setClasses] = useState([]);
     const [loading, setLoading] = useState([]);
+    const [showModal, setShowModal] = useState(false);
 
     const fetchData = async () => {
         setLoading(true)
@@ -45,28 +47,44 @@ export default function Home() {
         })();
     }, []);
 
-    return isConnected ?
-        loading
-            ? (<Loading />)
-            : classes?.length > 0
-                ? (
-                    <CardContainer>
-                        {classes?.map((item, ind) => {
-                            return <HomeCard key={ind} _data={item} />;
-                        })}
-                    </CardContainer>
-                )
-                : (
-                    <FallbackCont>
-                        <img src={NoClassSvg} />
-                        <p>Add a class to get started</p>
-                        <div>
-                            <Button>Join Class</Button>
-                            <Button>Create Class</Button>
-                        </div>
-                    </FallbackCont >
-                )
-        : <ConnectWalletFallback />
+    // On toggle of Modal, change the scroll mode of body
+    useEffect(() => {
+        if (showModal) {
+            window.scroll(0, 0)
+            document.body.style.overflowY = "hidden";
+        } else {
+            document.body.style.overflowY = "scroll";
+        }
+    }, [showModal]);
+
+    return (
+        <>
+            {showModal && <Modal showModal={showModal} setShowModal={setShowModal} />}
+            {isConnected ?
+                loading
+                    ? (<Loading />)
+                    : classes?.length > 0
+                        ? (
+                            <CardContainer>
+                                {classes?.map((item, ind) => {
+                                    return <HomeCard key={ind} _data={item} />;
+                                })}
+                            </CardContainer>
+                        )
+                        : (
+                            <FallbackCont>
+                                <img src={NoClassSvg} />
+                                <p>Add a class to get started</p>
+                                <div>
+                                    <Button onClick={() => setShowModal(true)}>Join Class</Button>
+                                    <Button onClick={() => setShowModal(true)}>Create Class</Button>
+                                </div>
+                            </FallbackCont >
+                        )
+                : <ConnectWalletFallback />
+            }
+        </>
+    )
 }
 
 const CardContainer = styled.div`
