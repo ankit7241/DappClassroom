@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import { CONTRACT_ADDRESS, ABI } from "../ContractDetails";
 import { toast } from "react-toastify";
 
-export default async function joinClass(setLoadMessage, setShowModal) {
+export default async function joinClass(code, setLoadMessage, setShowModal) {
     try {
         const { ethereum } = window;
         setLoadMessage("Loading...")

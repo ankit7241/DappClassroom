@@ -112,8 +112,8 @@ export default function Stream({ classData }) {
                             : msgData
                                 ? <>
                                     <Input classData={classData} />
-                                    {msgData?.map((item) => {
-                                        return <Message data={item} />;
+                                    {msgData?.map((item, ind) => {
+                                        return <Message key={ind} data={item} />;
                                     })}
                                 </>
                                 : <Button onClick={async () => { await fetchData(classData.id) }}>Load Messages</Button>
