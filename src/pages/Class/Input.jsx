@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { styled } from "styled-components";
 import { useAccount } from "wagmi";
+import { toast } from "react-toastify";
 // import { useAccount, useEnsAvatar, useEnsName } from "wagmi";
 
 import Button from "../../components/Button";
@@ -23,7 +24,21 @@ export default function Input({ classData }) {
     const [textInp, setTextInp] = useState("");
 
     const sendMessage = async () => {
-        await sendPushChatMessage(classData, textInp, setLoadMsg)
+        if (textInp.length >= 16) {
+            await sendPushChatMessage(classData, textInp, setLoadMsg)
+        }
+        else {
+            toast.error("Announcement should be minimum of 15 characters!", {
+                position: "top-center",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "dark",
+            });
+        }
     };
 
     return (

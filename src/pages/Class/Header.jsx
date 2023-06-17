@@ -1,14 +1,40 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from 'react-router-dom';
 import { styled } from 'styled-components';
+import { toast } from "react-toastify";
 
-import HomeIcon from "../../assets/img/home_icon.svg"
+import isTeacher from "../../utils/isTeacher";
+
 import ConnectWalletButton from '../../components/ConnectWalletButton';
+import HomeIcon from "../../assets/img/home_icon.svg"
 
 export default function Header({ classData, activeTab, setActiveTab }) {
 
     const navigate = useNavigate();
+    const [isUserTeacher, setIsUserTeacher] = useState(false)
 
+    useEffect(() => {
+        // Checking if the user is a teacher
+        if (classData && classData.id) {
+            (async () => {
+                const temp = await isTeacher(classData.id);
+                if (temp.status === "Success") {
+                    setIsUserTeacher(temp.data.data);
+                } else {
+                    toast.error(temp.data.msg, {
+                        position: "top-center",
+                        autoClose: 3000,
+                        hideProgressBar: false,
+                        closeOnClick: true,
+                        pauseOnHover: true,
+                        draggable: true,
+                        progress: undefined,
+                        theme: "dark",
+                    });
+                }
+            })();
+        }
+    }, [classData]);
 
     return (
         <HeaderContainer>
@@ -31,6 +57,13 @@ export default function Header({ classData, activeTab, setActiveTab }) {
                 <div onClick={() => { setActiveTab(2); navigate(`/class/${classData.id}/2`) }} >
                     <p activetab={activeTab === 2 ? "true" : "false"}>People</p>
                 </div>
+                {
+                    isUserTeacher
+                        ? <div onClick={() => { setActiveTab(3); navigate(`/class/${classData.id}/3`) }} >
+                            <p activetab={activeTab === 3 ? "true" : "false"}>Submissions</p>
+                        </div>
+                        : null
+                }
             </Middle>
 
             <Right>

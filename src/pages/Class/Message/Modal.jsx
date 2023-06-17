@@ -12,162 +12,172 @@ import Loading from "../../../components/Loading";
 import avatar from "../../../assets/img/placeholder_avatar.png";
 
 export default function Modal({ data, setShowModal, showModal }) {
-	const [loading, setLoading] = useState("");
-	const [msgData, setMsgData] = useState(null);
+    const [loading, setLoading] = useState("");
+    const [msgData, setMsgData] = useState(null);
 
-	const fetchData = async (id) => {
-		try {
-			const { ethereum } = window;
+    const fetchData = async (id) => {
+        setLoading(true);
+        try {
+            const { ethereum } = window;
 
-			if (ethereum) {
-				const provider = new ethers.providers.Web3Provider(ethereum);
-				const signer = provider.getSigner();
-				const connectedContract = new ethers.Contract(
-					CONTRACT_ADDRESS,
-					ABI,
-					signer
-				);
-				const accounts = await ethereum.request({
-					method: "eth_requestAccounts",
-				});
+            if (ethereum) {
+                const provider = new ethers.providers.Web3Provider(ethereum);
+                const signer = provider.getSigner();
+                const accounts = await ethereum.request({
+                    method: "eth_requestAccounts",
+                });
 
-				console.log(data, id);
-				setLoading(true);
+                const message = data.message;
 
-				console.log(data.message);
+                const startMarker = "****###@@";
+                const endMarker = "####***@@";
 
-				const message = data.message;
+                const startIndex = message.indexOf(startMarker) + startMarker.length;
+                const endIndex = message.indexOf(endMarker);
 
-				const startMarker = "****###@@";
-				const endMarker = "####***@@";
+                const chatId = message.substring(startIndex, endIndex);
 
-				const startIndex = message.indexOf(startMarker) + startMarker.length;
-				const endIndex = message.indexOf(endMarker);
+                const pvtKeyStartIndex = endIndex + endMarker.length;
+                const pvtKey = message.substring(pvtKeyStartIndex);
 
-				const chatId = message.substring(startIndex, endIndex);
+                const user = await PushAPI.user.get({
+                    account: `eip155:${accounts[0]}`,
+                    env: "staging",
+                });
 
-				const pvtKeyStartIndex = endIndex + endMarker.length;
-				const pvtKey = message.substring(pvtKeyStartIndex);
+                // need to decrypt the encryptedPvtKey to pass in the api using helper function
+                const pgpDecryptedPvtKey = await PushAPI.chat.decryptPGPKey({
+                    encryptedPGPPrivateKey: user.encryptedPrivateKey,
+                    signer: signer,
+                });
 
-				console.log("response.chatId:", chatId);
-				console.log("pgpDecryptedPvtKey:", pvtKey);
+                // conversation hash are also called link inside chat messages
+                const conversationHash = await PushAPI.chat.conversationHash({
+                    account: `${accounts[0]}`,
+                    conversationId: `${chatId}`, // receiver's address or chatId of a group
+                    env: "staging",
+                });
 
-				console.log(chatId, pvtKey);
+                // actual api
+                const chatHistory = await PushAPI.chat.history({
+                    threadhash: conversationHash.threadHash,
+                    account: `${accounts[0]}`,
+                    limit: 30,
+                    toDecrypt: true,
+                    pgpPrivateKey: pgpDecryptedPvtKey,
+                    env: "staging",
+                });
 
-				const user = await PushAPI.user.get({
-					account: `eip155:${accounts[0]}`,
-					env: "staging",
-				});
+                const Data = [];
 
-				// need to decrypt the encryptedPvtKey to pass in the api using helper function
-				const pgpDecryptedPvtKey = await PushAPI.chat.decryptPGPKey({
-					encryptedPGPPrivateKey: user.encryptedPrivateKey,
-					signer: signer,
-				});
+                chatHistory.forEach((item) => {
+                    const from = item.fromCAIP10.slice(7);
+                    const timestamp = item.timestamp;
+                    const message = item.messageContent;
 
-				// conversation hash are also called link inside chat messages
-				const conversationHash = await PushAPI.chat.conversationHash({
-					account: `${accounts[0]}`,
-					conversationId: `${chatId}`, // receiver's address or chatId of a group
-					env: "staging",
-				});
+                    const msgObj = {
+                        from: `${from}`,
+                        timestamp: `${timestamp}`,
+                        message: `${message}`,
+                    };
+                    Data.push(msgObj);
+                });
+                setMsgData(Data);
+                setLoading(false);
+            } else {
+                console.log("Ethereum object doesn't exist!");
+                toast.error("Some problem with Metamask! Please try again", {
+                    position: "top-center",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "dark",
+                });
+                setLoading(false);
+            }
+        } catch (error) {
+            console.log(error);
 
-				// actual api
-				const chatHistory = await PushAPI.chat.history({
-					threadhash: conversationHash.threadHash,
-					account: `${accounts[0]}`,
-					limit: 30,
-					toDecrypt: true,
-					pgpPrivateKey: pgpDecryptedPvtKey,
-					env: "staging",
-				});
+            if (error.toString().includes("user rejected signing")) {
+                toast.error("Please sign messages to load chat history!", {
+                    position: "top-center",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "dark",
+                });
+            } else if (error.toString().includes("Request failed with status code 400")) {
+                toast.error("No replies found!", {
+                    position: "top-center",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "dark",
+                });
+            } else {
+                toast.error("Unexpected error occurred while loading the messages!", {
+                    position: "top-center",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "dark",
+                });
+            }
 
-				const Data = [];
 
-				chatHistory.forEach((item) => {
-					const from = item.fromCAIP10.slice(7);
-					const timestamp = item.timestamp;
-					const message = item.messageContent;
+            setLoading(false);
+        }
+    };
 
-					const msgObj = {
-						from: `${from}`,
-						timestamp: `${timestamp}`,
-						message: `${message}`,
-					};
-					Data.push(msgObj);
-				});
-				setMsgData(Data);
-				setLoading(false);
-			} else {
-				console.log("Ethereum object doesn't exist!");
-				toast.error("Some problem with Metamask! Please try again", {
-					position: "top-center",
-					autoClose: 3000,
-					hideProgressBar: false,
-					closeOnClick: true,
-					pauseOnHover: true,
-					draggable: true,
-					progress: undefined,
-					theme: "dark",
-				});
-				setLoading(false);
-			}
-		} catch (error) {
-			console.log(error);
-			toast.error("Some error was encountered while sending the message !", {
-				position: "top-center",
-				autoClose: 3000,
-				hideProgressBar: false,
-				closeOnClick: true,
-				pauseOnHover: true,
-				draggable: true,
-				progress: undefined,
-				theme: "dark",
-			});
-			setLoading(false);
-		}
+    useEffect(() => {
+        if (data) {
+            (async () => {
+                await fetchData(data);
+            })();
+        }
+    }, [data]);
 
-		//Enter your function here
-	};
+    return (
+        <Container onClick={() => setShowModal(false)}>
+            <Main onClick={(e) => e.stopPropagation()}>
+                {loading ? (
+                    <Loading text="Loading replies..." />
+                ) : (
+                    <>
+                        <h2>All Replies</h2>
 
-	useEffect(() => {
-		// if (data && data.id) {
-		if (data) {
-			(async () => {
-				await fetchData(data);
-			})();
-		}
-	}, [data]);
+                        <Input data={data} />
 
-	return (
-		<Container onClick={() => setShowModal(false)}>
-			<Main onClick={(e) => e.stopPropagation()}>
-				{loading ? (
-					<Loading text="Loading replies..." />
-				) : (
-					<>
-						<h2>All Replies</h2>
-
-						<Input data={data} />
-
-						<div>
-							{msgData ? (
-								msgData.length > 0 ? (
-									msgData?.map((item) => {
-										return <Message data={item} />;
-									})
-								) : (
-									<p style={{ textAlign: "center" }}>No messages found</p>
-								)
-							) : (
-								<p style={{ textAlign: "center" }}>No messages found</p>
-							)}
-						</div>
-					</>
-				)}
-			</Main>
-		</Container>
-	);
+                        <div>
+                            {msgData ? (
+                                msgData.length > 0 ? (
+                                    msgData?.map((item) => {
+                                        return <Message data={item} />;
+                                    })
+                                ) : (
+                                    <p style={{ textAlign: "center" }}>No messages found</p>
+                                )
+                            ) : (
+                                <p style={{ textAlign: "center" }}>No messages found</p>
+                            )}
+                        </div>
+                    </>
+                )}
+            </Main>
+        </Container>
+    );
 }
 
 const Container = styled.div`
@@ -278,33 +288,33 @@ const StyledButton = styled(Button)`
 `;
 
 const Message = ({ data }) => {
-	const shortenAddress = (address, place) => {
-		return address.slice(0, place) + "..." + address.slice(-place);
-	};
+    const shortenAddress = (address, place) => {
+        return address.slice(0, place) + "..." + address.slice(-place);
+    };
 
-	return (
-		<MsgContainer>
-			<MsgTop>
-				<img src={avatar} alt="" />
-				<div>
-					<p>
-						<span title={data.from}>({shortenAddress(data.from, 4)})</span>
-					</p>
-					<p>
-						{new Date(parseInt(data.timestamp)).toLocaleTimeString("en-us", {
-							hour: "2-digit",
-							minute: "2-digit",
-						})}{" "}
-						{new Date(parseInt(data.timestamp)).toLocaleString("default", {
-							day: "numeric",
-							month: "long",
-						})}
-					</p>
-				</div>
-			</MsgTop>
-			<p>{data.message}</p>
-		</MsgContainer>
-	);
+    return (
+        <MsgContainer>
+            <MsgTop>
+                <img src={avatar} alt="" />
+                <div>
+                    <p>
+                        <span title={data.from}>({shortenAddress(data.from, 4)})</span>
+                    </p>
+                    <p>
+                        {new Date(parseInt(data.timestamp)).toLocaleTimeString("en-us", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                        })}{" "}
+                        {new Date(parseInt(data.timestamp)).toLocaleString("default", {
+                            day: "numeric",
+                            month: "long",
+                        })}
+                    </p>
+                </div>
+            </MsgTop>
+            <p>{data.message}</p>
+        </MsgContainer>
+    );
 };
 
 const MsgContainer = styled.div`

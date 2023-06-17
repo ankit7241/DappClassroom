@@ -2,19 +2,20 @@ import React, { useEffect, useState } from "react";
 import { styled } from "styled-components";
 import { toast } from "react-toastify";
 import { useAccount } from "wagmi";
-import { ethers, BigNumber } from "ethers";
-import avatar from "../../assets/img/placeholder_avatar.png";
+
+import { ethers } from "ethers";
 import { CONTRACT_ADDRESS, ABI } from "../../ContractDetails";
 import isTeacher from "../../utils/isTeacher";
 
-import Button from "../../components/Button";
 import Loading from "../../components/Loading";
+import avatar from "../../assets/img/placeholder_avatar.png";
 
 export default function People({ classData }) {
     const { address } = useAccount();
 
     const [people, setPeople] = useState(null);
     const [isUserTeacher, setIsUserTeacher] = useState(false);
+    const [teacherAddress, setTeacherAddress] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
     const fetchData = async (id) => {
@@ -29,18 +30,15 @@ export default function People({ classData }) {
                     ABI,
                     signer
                 );
-                const accounts = await ethereum.request({
-                    method: "eth_requestAccounts",
-                });
 
                 let userClassIds;
                 await connectedContract.getClassStudents(id).then((classIdCount) => {
                     userClassIds = `${classIdCount}`;
                 });
-                console.log(userClassIds);
 
                 // Making an Array of all class Ids a user is enrolled in
                 const userClassIdArray = userClassIds.split(",").map(String);
+
 
                 let Data = [];
                 for (let i = 0; i < userClassIdArray.length; i++) {
@@ -51,30 +49,13 @@ export default function People({ classData }) {
                     Data.push(fetchedObject);
                 }
 
-                // const modifiedData = userClassIdArray.map(async (item) => {
-                // 	// const ensAvatar = getEnsAvatar(item.address, 5)
-                // 	// const ensName = getEnsName(item.address, 5)
-                // 	// if (ensName) {
-                // 	//     item.ensName = ensName;
-                // 	//     return item;
-                // 	// }
-                // 	// else {
-                // 	//     item.ensName = null;
-                // 	//     return item;
-                // 	// }
-                // 	// if (ensAvatar) {
-                // 	//     item.ensAvatar = ensAvatar;
-                // 	//     return item;
-                // 	// }
-                // 	// else {
-                // 	//     item.ensAvatar = null;
-                // 	//     return item;
-                // 	// }
-                // 	item.ensAvatar = null;
-                // 	item.ensName = null;
-                // 	return item;
-                // });
-                setPeople(Data);
+                if (Data.length === 1 && Data[0].address === "") {
+                    setPeople(null);
+                }
+                else {
+                    setPeople(Data);
+                }
+
                 setIsLoading(false);
             }
         } catch (error) {
@@ -83,26 +64,29 @@ export default function People({ classData }) {
     };
 
     useEffect(() => {
-        (async () => {
-            await fetchData(classData?.id);
-        })();
-        (async () => {
-            const temp = await isTeacher(classData?.id);
-            if (temp.status === "Success") {
-                setIsUserTeacher(temp.data.data);
-            } else {
-                toast.error(temp.data.msg, {
-                    position: "top-center",
-                    autoClose: 3000,
-                    hideProgressBar: false,
-                    closeOnClick: true,
-                    pauseOnHover: true,
-                    draggable: true,
-                    progress: undefined,
-                    theme: "dark",
-                });
-            }
-        })();
+        if (classData && classData.id) {
+            (async () => {
+                await fetchData(classData?.id);
+            })();
+            (async () => {
+                const temp = await isTeacher(classData.id);
+                if (temp.status === "Success") {
+                    setIsUserTeacher(temp.data.data);
+                    setTeacherAddress(temp.data.teacherAddress)
+                } else {
+                    toast.error(temp.data.msg, {
+                        position: "top-center",
+                        autoClose: 3000,
+                        hideProgressBar: false,
+                        closeOnClick: true,
+                        pauseOnHover: true,
+                        draggable: true,
+                        progress: undefined,
+                        theme: "dark",
+                    });
+                }
+            })();
+        }
     }, [classData]);
 
     return (
@@ -111,6 +95,15 @@ export default function People({ classData }) {
                 <Loading />
             ) : (
                 <Main>
+                    <PeopleTile style={{ background: "rgba(255, 255, 255, 0.15)" }} >
+                        <div>
+                            {/* <img src={item.ensAvatar ? item.ensAvatar : avatar} /> */}
+                            <img src={avatar} />
+                            <p>{teacherAddress ? teacherAddress : "Loading..."}</p>
+                        </div>
+                        <p>Teacher</p>
+                    </PeopleTile>
+
                     <TileList>
                         {people && people.length > 0 ? (
                             people.map((item, ind) => {
@@ -129,26 +122,15 @@ export default function People({ classData }) {
                                                 alt=""
                                             />
                                             <p>
-                                                {item.address} <span></span>
+                                                {item.address}
                                             </p>
                                         </div>
-
-                                        {/* <p>
-											Joined{" "}
-											{new Date(parseInt(item.timestamp)).toLocaleTimeString(
-												"en-us",
-												{ hour: "2-digit", minute: "2-digit" }
-											)}{" "}
-											{new Date(parseInt(item.timestamp)).toLocaleString(
-												"default",
-												{ day: "numeric", month: "long" }
-											)}
-										</p> */}
+                                        <p>Student</p>
                                     </PeopleTile>
                                 );
                             })
                         ) : (
-                            <p>No people in the classroom</p>
+                            <p>No Students in the classroom</p>
                         )}
                     </TileList>
                 </Main>
