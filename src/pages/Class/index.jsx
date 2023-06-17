@@ -3,16 +3,20 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAccount } from "wagmi";
 import { toast } from "react-toastify";
 
+import getClassData from "../../utils/getClassData";
+import isTeacher from "../../utils/isTeacher";
+
 import Header from "./Header";
 import Stream from "./Stream";
 import Assignments from "./Assignments";
 import People from "./People";
-import getClassData from "../../utils/getClassData";
+import Submissions from "./Submissions";
+
 import Loading from "../../components/Loading";
 import ConnectWalletFallback from "../../components/ConnectWalletFallback";
 
 export default function Class() {
-    const { isConnected } = useAccount();
+    const { isConnected, address } = useAccount();
 
     const { classId, tab } = useParams();
     const navigate = useNavigate();
@@ -21,6 +25,8 @@ export default function Class() {
     const [loading, setLoading] = useState(null);
     const [classData, setClassData] = useState(null);
     const [activeTab, setActiveTab] = useState(0);
+
+    const [isUserTeacher, setIsUserTeacher] = useState(false);
 
     const fetchData = async (id) => {
         setLoading(true)
@@ -53,8 +59,29 @@ export default function Class() {
             (async () => {
                 await fetchData(classId);
             })();
+
+            // Checking if the user is a teacher
+            (async () => {
+                setLoading(true)
+                const temp = await isTeacher(classId);
+                if (temp.status === "Success") {
+                    setIsUserTeacher(temp.data.data);
+                } else {
+                    toast.error(temp.data.msg, {
+                        position: "top-center",
+                        autoClose: 3000,
+                        hideProgressBar: false,
+                        closeOnClick: true,
+                        pauseOnHover: true,
+                        draggable: true,
+                        progress: undefined,
+                        theme: "dark",
+                    });
+                }
+                setLoading(false)
+            })();
         }
-    }, [classId]);
+    }, [classId, address]);
 
     useEffect(() => {
         try {
@@ -62,18 +89,18 @@ export default function Class() {
                 navigate(`/${location.pathname.split("/")[1]}/${location.pathname.split("/")[2]}/0`)
             }
             if (!tab || parseInt(tab) < 0 || parseInt(tab) > 2) {
-                navigate(
-                    location.pathname +
-                    (location.pathname.charAt(location.pathname.length - 1) === "/"
-                        ? "0"
-                        : "/0")
-                );
+                if (!loading && !isUserTeacher) {
+                    navigate(`/${location.pathname.split("/")[1]}/${location.pathname.split("/")[2]}/0`)
+                }
+                else if (!loading && isUserTeacher && parseInt(tab) !== 3) {
+                    navigate(`/${location.pathname.split("/")[1]}/${location.pathname.split("/")[2]}/3`)
+                }
             }
             setActiveTab(parseInt(tab));
         } catch (err) {
             navigate(`/${location.pathname.split("/")[1]}/${location.pathname.split("/")[2]}/0`)
         }
-    }, [tab]);
+    }, [tab, loading]);
 
     return (
         loading
@@ -89,6 +116,7 @@ export default function Class() {
                     {activeTab === 0 && <Stream classData={classData} />}
                     {activeTab === 1 && <Assignments classData={classData} />}
                     {activeTab === 2 && <People classData={classData} />}
+                    {isUserTeacher && activeTab === 3 && <Submissions classData={classData} />}
                 </>
                 : <ConnectWalletFallback />
     );

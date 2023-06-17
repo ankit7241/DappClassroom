@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { styled } from "styled-components";
 import { toast } from "react-toastify";
 import { ethers } from "ethers";
@@ -8,166 +9,171 @@ import storeFiles from "../../../utils/storeOnIPFS";
 import Button from "../../../components/Button";
 import Loading from "../../../components/Loading";
 
-import Modal from "./Modal";
-
 export default function AssignmentDetail({ data, isUserTeacher }) {
-	const [showModal, setShowModal] = useState(false);
-	const [assignmentFile, setAssignmentFile] = useState(null);
-	const [isLoading, setIsLoading] = useState(false);
 
-	const submitWork = async () => {
-		try {
-			const { ethereum } = window;
+    const [assignmentFile, setAssignmentFile] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [loadingText, setLoadingText] = useState(null);
 
-			if (ethereum) {
-				setIsLoading(true);
-				const provider = new ethers.providers.Web3Provider(ethereum);
-				const signer = provider.getSigner();
-				const connectedContract = new ethers.Contract(
-					CONTRACT_ADDRESS,
-					ABI,
-					signer
-				);
-				const accounts = await ethereum.request({
-					method: "eth_requestAccounts",
-				});
+    const submitWork = async () => {
+        setLoadingText("Loading...")
+        setIsLoading(true);
+        try {
+            const { ethereum } = window;
 
-				const assignmentFileCID = await storeFiles(assignmentFile);
+            if (ethereum) {
+                const provider = new ethers.providers.Web3Provider(ethereum);
+                const signer = provider.getSigner();
+                const connectedContract = new ethers.Contract(
+                    CONTRACT_ADDRESS,
+                    ABI,
+                    signer
+                );
 
-				let assignmentCount;
+                setLoadingText("Uploading work...")
+                const assignmentFileCID = await storeFiles(assignmentFile);
 
-				let completedAssigment = await connectedContract.completedAssigment(
-					data.classCode,
-					data.assignmentId,
-					`${assignmentFileCID}`
-				);
+                setLoadingText("Submitting...")
+                let completedAssigment = await connectedContract.completedAssigment(
+                    data.classCode,
+                    data.assignmentId,
+                    `${assignmentFileCID}`
+                );
 
-				await completedAssigment.wait();
-				toast.success("Assignment submitted successfully!", {
-					position: "top-center",
-					autoClose: 3000,
-					hideProgressBar: false,
-					closeOnClick: true,
-					pauseOnHover: true,
-					draggable: true,
-					progress: undefined,
-					theme: "dark",
-				});
+                await completedAssigment.wait();
 
-				setIsLoading(false);
-			} else {
-				console.log("Ethereum object doesn't exist!");
+                toast.success("Assignment submitted successfully!", {
+                    position: "top-center",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "dark",
+                });
 
-				toast.error("Some problem with Metamask! Please try again", {
-					position: "top-center",
-					autoClose: 3000,
-					hideProgressBar: false,
-					closeOnClick: true,
-					pauseOnHover: true,
-					draggable: true,
-					progress: undefined,
-					theme: "dark",
-				});
-			}
-		} catch (error) {
-			console.log(error);
-			toast.error(
-				"The provided class code does not exist. Please check and try again!",
-				{
-					position: "top-center",
-					autoClose: 3000,
-					hideProgressBar: false,
-					closeOnClick: true,
-					pauseOnHover: true,
-					draggable: true,
-					progress: undefined,
-					theme: "dark",
-				}
-			);
-		}
-	};
+                setIsLoading(false);
+                setLoadingText(null);
+            } else {
+                console.log("Ethereum object doesn't exist!");
 
-	// On toggle of Modal, change the scroll mode of body
-	useEffect(() => {
-		if (showModal) {
-			window.scroll(0, 0);
-			document.body.style.overflowY = "hidden";
-		} else {
-			document.body.style.overflowY = "scroll";
-		}
-	}, [showModal]);
+                toast.error("Some problem with Metamask! Please try again", {
+                    position: "top-center",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "dark",
+                });
 
-	return (
-		<>
-			{showModal && <Modal showModal={showModal} setShowModal={setShowModal} />}
-			<Container>
-				{isLoading ? (
-					<Loading />
-				) : (
-					<div>
-						<Main>
-							<TopDiv>
-								<h2>{data.name}</h2>
-								<div>
-									<p>Maximum Marks: {data.maxMarks}</p>
-									<p>
-										Due{" "}
-										{new Date(parseInt(data.deadline)).toLocaleTimeString(
-											"en-us",
-											{ hour: "2-digit", minute: "2-digit" }
-										)}{" "}
-										{new Date(parseInt(data.deadline)).toLocaleString(
-											"default",
-											{ day: "numeric", month: "long" }
-										)}
-									</p>
-								</div>
-							</TopDiv>
-							<DescDiv>
-								<p>{data.description}</p>
-							</DescDiv>
-							<p>Open Assignment →</p>
-						</Main>
-						<Right>
-							<div>
-								<h3>Your work</h3>
-								{data.assigned ? (
-									<p data-type="grey">Assigned</p>
-								) : data.completed ? (
-									<p data-type="yellow">Submitted</p>
-								) : data.marked ? (
-									<p data-type="green">{`Scored: ${data.scroredMarks}`}</p>
-								) : (
-									new Date().getTime() > parseInt(data.deadline) && (
-										<p data-type="red">Deadline exceeded</p>
-									)
-								)}
-							</div>
-							{data.assigned ? (
-								<>
-									<input
-										type="file"
-										placeholder="Upload assignment file"
-										accept="image/png, image/jpeg"
-										onChange={(e) => setAssignmentFile(e.target.files[0])}
-									/>
-									<Button
-										onClick={async () => {
-											await submitWork();
-										}}
-									>
-										Submit Work
-									</Button>
-								</>
-							) : (
-								<p>Open Your Work →</p>
-							)}
-						</Right>
-					</div>
-				)}
-			</Container>
-		</>
-	);
+                setIsLoading(false);
+                setLoadingText(null);
+            }
+        } catch (error) {
+            console.log(error);
+            toast.error(
+                "The provided class code does not exist. Please check and try again!",
+                {
+                    position: "top-center",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "dark",
+                }
+            );
+
+            setIsLoading(false);
+            setLoadingText(null);
+        }
+    };
+
+
+    return (
+        <>
+            <Container data-center={isLoading ? "true" : "false"}>
+                {isLoading ? (
+                    <Loading text={loadingText} />
+                ) : (
+                    <div>
+                        <Main>
+                            <TopDiv>
+                                <h2>{data.name}</h2>
+                                <div>
+                                    <p>Maximum Marks: {data.maxMarks}</p>
+                                    <p>
+                                        Due{" "}
+                                        {new Date(parseInt(data.deadline)).toLocaleTimeString(
+                                            "en-us",
+                                            { hour: "2-digit", minute: "2-digit" }
+                                        )}{" "}
+                                        {new Date(parseInt(data.deadline)).toLocaleString(
+                                            "default",
+                                            { day: "numeric", month: "long" }
+                                        )}
+                                    </p>
+                                </div>
+                            </TopDiv>
+                            <DescDiv>
+                                <p>{data.description}</p>
+                            </DescDiv>
+                            <Link
+                                to={{ pathname: data.assignment }}
+                                target="_blank"
+                            >
+                                Open Assignment →
+                            </Link>
+                        </Main>
+                        <Right>
+                            <div>
+                                <h3>Your work</h3>
+                                {data.assigned ? (
+                                    <p data-type="grey">Assigned</p>
+                                ) : data.completed ? (
+                                    <p data-type="yellow">Submitted</p>
+                                ) : data.marked ? (
+                                    <p data-type="green">{`Scored: ${data.scroredMarks}`}</p>
+                                ) : (
+                                    new Date().getTime() > parseInt(data.deadline) && (
+                                        <p data-type="red">Deadline exceeded</p>
+                                    )
+                                )}
+                            </div>
+                            {data.assigned ? (
+                                <>
+                                    <input
+                                        type="file"
+                                        placeholder="Upload assignment file"
+                                        accept="image/png, image/jpeg"
+                                        onChange={(e) => setAssignmentFile(e.target.files[0])}
+                                    />
+                                    <Button
+                                        onClick={async () => {
+                                            await submitWork();
+                                        }}
+                                    >
+                                        Submit Work
+                                    </Button>
+                                </>
+                            ) : (
+                                <Link
+                                    to={{ pathname: data.studentAssignment }}
+                                    target="_blank"
+                                >
+                                    Open Your Work →
+                                </Link>
+                            )}
+                        </Right>
+                    </div>
+                )}
+            </Container>
+        </>
+    );
 }
 
 const Container = styled.div`
@@ -177,6 +183,10 @@ const Container = styled.div`
 	align-items: center;
 	gap: 30px;
 	flex: 1;
+
+    &[data-center="true"] {
+        justify-content: center;
+    }
 
 	& > div {
 		width: 100%;

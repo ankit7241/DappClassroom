@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { styled } from "styled-components";
 import { toast } from "react-toastify";
-import { ethers } from "ethers";
-import { CONTRACT_ADDRESS, ABI } from "../../../ContractDetails";
 
 import isTeacher from "../../../utils/isTeacher";
+import getAssignments from "../../../utils/getAssignments";
 
 import Button from "../../../components/Button";
 import Loading from "../../../components/Loading";
@@ -14,361 +13,229 @@ import Modal from "./Modal";
 import AssignmentDetail from "./AssignmentDetail";
 
 export default function Assignments({ classData }) {
-	const [assignments, setAssignments] = useState(null);
-	const [isUserTeacher, setIsUserTeacher] = useState(false);
-	const [showModal, setShowModal] = useState(false);
-	const [isLoading, setIsLoading] = useState(false);
-	const [selectedAssignment, setSelectedAssignment] = useState(null);
-	const [assignmentId, setAssignmentId] = useState();
+    const [assignments, setAssignments] = useState(null);
+    const [isUserTeacher, setIsUserTeacher] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [selectedAssignment, setSelectedAssignment] = useState(null);
 
-	const fetchData = async (id) => {
-		try {
-			const { ethereum } = window;
+    const fetchData = async (id) => {
+        const resp = await getAssignments(id, setIsLoading)
+        if (resp.status === "Success") {
+            setAssignments(resp.data)
+        }
+        else {
+            toast.error(
+                resp.data.msg,
+                {
+                    position: "top-center",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "dark",
+                }
+            );
+        }
+    };
 
-			if (ethereum) {
-				setIsLoading(true);
-				const provider = new ethers.providers.Web3Provider(ethereum);
-				const signer = provider.getSigner();
-				const connectedContract = new ethers.Contract(
-					CONTRACT_ADDRESS,
-					ABI,
-					signer
-				);
-				const accounts = await ethereum.request({
-					method: "eth_requestAccounts",
-				});
+    useEffect(() => {
+        if (classData && classData.id) {
+            // Fetching assignments data
+            (async () => {
+                await fetchData(classData.id);
+            })();
 
-				setAssignments([
-					{
-						deadline: "1689532200000",
-						name: "Assignment name #1",
-						description: "This is the description",
-						assignment: "Please set a File here",
-						maxMarks: "100",
-						scroredMarks: null,
-						assigned: true,
-						completed: false,
-						marked: false,
-					},
-					{
-						deadline: "1689532200000",
-						name: "Assignment name #1",
-						description: "This is the description",
-						assignment: "Please set a File here",
-						maxMarks: "100",
-						scroredMarks: null,
-						assigned: false,
-						completed: true,
-						marked: false,
-					},
-					{
-						deadline: "1689532200000",
-						name: "Assignment name #1",
-						description: "This is the description",
-						assignment: "Please set a File here",
-						maxMarks: "100",
-						scroredMarks: "80",
-						assigned: false,
-						completed: false,
-						marked: true,
-					},
-					{
-						deadline: "1629532200000",
-						name: "Assignment name #1",
-						description: "This is the description",
-						assignment: "Please set a File here",
-						maxMarks: "100",
-						scroredMarks: null,
-						assigned: false,
-						completed: false,
-						marked: false,
-					},
-				]);
+            // Checking if the user is a teacher
+            (async () => {
+                const temp = await isTeacher(classData.id);
+                if (temp.status === "Success") {
+                    setIsUserTeacher(temp.data.data);
+                } else {
+                    toast.error(temp.data.msg, {
+                        position: "top-center",
+                        autoClose: 3000,
+                        hideProgressBar: false,
+                        closeOnClick: true,
+                        pauseOnHover: true,
+                        draggable: true,
+                        progress: undefined,
+                        theme: "dark",
+                    });
+                }
+            })();
+        }
+    }, [classData, showModal]);
 
-				let assignmentCount;
+    // On toggle of Modal, change the scroll mode of body
+    useEffect(() => {
+        if (showModal) {
+            window.scroll(0, 0);
+            document.body.style.overflowY = "hidden";
+        } else {
+            document.body.style.overflowY = "scroll";
+        }
+    }, [showModal]);
 
-				await connectedContract
-					.getClassAssignmentIdCounter(`${id}`)
-					.then((classIdCount) => {
-						assignmentCount = `${classIdCount}`;
-					});
+    return (
+        <>
+            {selectedAssignment ? (
+                <AssignmentDetail
+                    data={selectedAssignment}
+                    isUserTeacher={isUserTeacher}
+                />
+            ) : (
+                <>
+                    {showModal && (
+                        <Modal
+                            id={classData?.id}
+                            showModal={showModal}
+                            setShowModal={setShowModal}
+                        />
+                    )}
+                    <Container>
+                        {isLoading ? (
+                            <Loading />
+                        ) : (
+                            <Main>
+                                {isUserTeacher && (
+                                    <TopDiv>
+                                        <Button onClick={() => setShowModal(true)}>
+                                            <Plus />
+                                            Create Assignment
+                                        </Button>
+                                    </TopDiv>
+                                )}
 
-				const Data = [];
+                                <TileList>
+                                    {
+                                        isUserTeacher
+                                            ? assignments && assignments.length > 0 ? (
+                                                assignments.map((item, ind) => {
+                                                    return (
+                                                        <AssignmentTile key={ind}>
+                                                            <div>
+                                                                {
+                                                                    new Date().getTime() > parseInt(item.deadline)
+                                                                        ? <div red="true"></div>
+                                                                        : <div green="true"></div>
+                                                                }
+                                                                <p>{item.name}</p>
+                                                            </div>
 
-				for (let i = 0; i < assignmentCount; i++) {
-					let assignmentDescCID;
+                                                            <div style={{ justifyContent: "flex-end" }}>
+                                                                <>
+                                                                    Due{" "}
+                                                                    {new Date(
+                                                                        parseInt(item.deadline)
+                                                                    ).toLocaleTimeString("en-us", {
+                                                                        hour: "2-digit",
+                                                                        minute: "2-digit",
+                                                                    })}{" "}
+                                                                    {new Date(
+                                                                        parseInt(item.deadline)
+                                                                    ).toLocaleString("default", {
+                                                                        day: "numeric",
+                                                                        month: "long",
+                                                                        year: "numeric"
+                                                                    })}
+                                                                </>
+                                                            </div>
+                                                        </AssignmentTile>
+                                                    );
+                                                })
+                                            ) : (
+                                                <p>No assignments posted yet</p>
+                                            )
+                                            : assignments && assignments.length > 0 ? (
+                                                assignments.map((item, ind) => {
+                                                    return (
+                                                        <AssignmentTile key={ind}>
+                                                            <div>
+                                                                {
+                                                                    item.marked ? (
+                                                                        <div green="true"></div>
+                                                                    ) : item.completed ? (
+                                                                        <div yellow="true"></div>
+                                                                    ) : item.assigned
+                                                                        ? new Date().getTime() > parseInt(item.deadline)
+                                                                            ? <div red="true"></div>
+                                                                            : <div pink="true"></div>
+                                                                        : null
+                                                                }
+                                                                <p>{item.name}</p>
+                                                            </div>
 
-					await connectedContract
-						.getAssignmentDescriptionCID(`${id}`, `${i}`)
-						.then((classIdCount) => {
-							assignmentDescCID = `${classIdCount}`;
-						});
+                                                            <p>
+                                                                {item.marked
+                                                                    ? `Scored ${item.scroredMarks}/${item.maxMarks}`
+                                                                    : item.completed
+                                                                        ? `Assignment Submitted`
+                                                                        : <>
+                                                                            Due{" "}
+                                                                            {new Date(
+                                                                                parseInt(item.deadline)
+                                                                            ).toLocaleTimeString("en-us", {
+                                                                                hour: "2-digit",
+                                                                                minute: "2-digit",
+                                                                            })}{" "}
+                                                                            {new Date(
+                                                                                parseInt(item.deadline)
+                                                                            ).toLocaleString("default", {
+                                                                                day: "numeric",
+                                                                                month: "long"
+                                                                            })}
+                                                                        </>
+                                                                }
+                                                            </p>
 
-					let studentStatus;
-
-					await connectedContract
-						.getStudentStatus(`${id}`, `${i}`)
-						.then((classIdCount) => {
-							studentStatus = `${classIdCount}`;
-						});
-
-					let studentMarks = 0;
-					try {
-						await connectedContract
-							.getStudentMarks(`${id}`, `${i}`)
-							.then((classIdCount) => {
-								studentMarks = `${classIdCount}`;
-							});
-					} catch (error) {
-						console.log(error);
-					}
-
-					let studentAssignment = null;
-					try {
-						await connectedContract
-							.getStudentAssignmentCID(`${id}`, `${i}`)
-							.then((classIdCount) => {
-								studentAssignment = `${classIdCount}`;
-							});
-					} catch (error) {
-						console.log(error);
-					}
-
-					let assigned;
-					let completed;
-					let marked;
-
-					if (studentStatus == 0) {
-						assigned = true;
-						completed = false;
-						marked = false;
-					} else {
-						if (studentStatus == 1) {
-							assigned = false;
-							completed = true;
-							marked = false;
-						} else {
-							assigned = false;
-							completed = false;
-							marked = true;
-						}
-					}
-
-					const url = `https://ipfs.io/ipfs/${assignmentDescCID}`;
-					const res = await fetch(url);
-					let fetchedData = await res.json();
-					const data = JSON.parse(fetchedData);
-
-					const fetchedObject = {
-						classCode: `${id}`,
-						assignmentId: `${i}`,
-						deadline: `${data.deadline}`,
-						name: `${data.assignmentName}`,
-						description: `${data.assignmentDesc}`,
-						assignment: `${data.assignmentFileCID}`,
-						studentAssignment: `${studentAssignment}`,
-						maxMarks: `${data.maximumMarks}`,
-						scroredMarks: studentMarks,
-						assigned: assigned,
-						completed: completed,
-						marked: marked,
-					};
-
-					console.log(fetchedObject);
-
-					Data.push(fetchedObject);
-				}
-
-				setAssignments(Data);
-
-				setIsLoading(false);
-			} else {
-				console.log("Ethereum object doesn't exist!");
-
-				toast.error("Some problem with Metamask! Please try again", {
-					position: "top-center",
-					autoClose: 3000,
-					hideProgressBar: false,
-					closeOnClick: true,
-					pauseOnHover: true,
-					draggable: true,
-					progress: undefined,
-					theme: "dark",
-				});
-			}
-		} catch (error) {
-			console.log(error);
-			toast.error(
-				"The provided class code does not exist. Please check and try again!",
-				{
-					position: "top-center",
-					autoClose: 3000,
-					hideProgressBar: false,
-					closeOnClick: true,
-					pauseOnHover: true,
-					draggable: true,
-					progress: undefined,
-					theme: "dark",
-				}
-			);
-		}
-	};
-
-	useEffect(() => {
-		// Fetching assignments data
-		(async () => {
-			await fetchData(classData?.id);
-		})();
-
-		// Checking if the user is a teacher
-		(async () => {
-			const temp = await isTeacher(classData?.id);
-			console.log(temp.data.data);
-			if (temp.status === "Success") {
-				setIsUserTeacher(temp.data.data);
-			} else {
-				toast.error(temp.data.msg, {
-					position: "top-center",
-					autoClose: 3000,
-					hideProgressBar: false,
-					closeOnClick: true,
-					pauseOnHover: true,
-					draggable: true,
-					progress: undefined,
-					theme: "dark",
-				});
-			}
-		})();
-	}, [classData]);
-
-	// On toggle of Modal, change the scroll mode of body
-	useEffect(() => {
-		if (showModal) {
-			window.scroll(0, 0);
-			document.body.style.overflowY = "hidden";
-		} else {
-			document.body.style.overflowY = "scroll";
-		}
-	}, [showModal]);
-
-	return (
-		<>
-			{selectedAssignment ? (
-				<AssignmentDetail
-					data={selectedAssignment}
-					isUserTeacher={isUserTeacher}
-				/>
-			) : (
-				<>
-					{showModal && (
-						<Modal
-							id={classData?.id}
-							showModal={showModal}
-							setShowModal={setShowModal}
-						/>
-					)}
-					<Container>
-						{isLoading ? (
-							<Loading />
-						) : (
-							<Main>
-								{isUserTeacher && (
-									<TopDiv>
-										<Button onClick={() => setShowModal(true)}>
-											<Plus />
-											Create Assignment
-										</Button>
-									</TopDiv>
-								)}
-
-								<TileList>
-									{assignments && assignments.length > 0 ? (
-										assignments.map((item, ind) => {
-											return (
-												<AssignmentTile key={ind}>
-													<div>
-														{item.marked ? (
-															<div green="true"></div>
-														) : item.completed ? (
-															<div yellow="true"></div>
-														) : item.assigned ? (
-															<div pink="true"></div>
-														) : new Date().getTime() >
-														  parseInt(item.deadline) ? (
-															<div red="true"></div>
-														) : null}
-														<p>{item.name}</p>
-													</div>
-
-													<p>
-														{item.marked ? (
-															`Scored ${item.scroredMarks}/${item.maxMarks}`
-														) : (
-															<>
-																Due{" "}
-																{new Date(
-																	parseInt(item.deadline)
-																).toLocaleTimeString("en-us", {
-																	hour: "2-digit",
-																	minute: "2-digit",
-																})}{" "}
-																{new Date(
-																	parseInt(item.deadline)
-																).toLocaleString("default", {
-																	day: "numeric",
-																	month: "long",
-																})}
-															</>
-														)}
-													</p>
-
-													<div style={{ justifyContent: "flex-end" }}>
-														{item.marked ? (
-															<Button
-																data-btn-type="view"
-																onClick={() => {
-																	setSelectedAssignment(item);
-																}}
-															>
-																View Work
-															</Button>
-														) : item.completed ? (
-															<Button
-																data-btn-type="view"
-																onClick={() => {
-																	setSelectedAssignment(item);
-																}}
-															>
-																View Work
-															</Button>
-														) : item.assigned ? (
-															<Button
-																data-btn-type="upload"
-																onClick={() => {
-																	setSelectedAssignment(item);
-																}}
-															>
-																Upload Work
-															</Button>
-														) : new Date().getTime() >
-														  parseInt(item.deadline) ? (
-															<p>Deadline exceeded</p>
-														) : null}
-													</div>
-												</AssignmentTile>
-											);
-										})
-									) : (
-										<p>No assignments assigned to you yet</p>
-									)}
-								</TileList>
-							</Main>
-						)}
-					</Container>
-				</>
-			)}{" "}
-		</>
-	);
+                                                            <div style={{ justifyContent: "flex-end" }}>
+                                                                {item.marked ? (
+                                                                    <Button
+                                                                        data-btn-type="view"
+                                                                        onClick={() => {
+                                                                            setSelectedAssignment(item);
+                                                                        }}
+                                                                    >
+                                                                        View Work
+                                                                    </Button>
+                                                                ) : item.completed ? (
+                                                                    <Button
+                                                                        data-btn-type="view"
+                                                                        onClick={() => {
+                                                                            setSelectedAssignment(item);
+                                                                        }}
+                                                                    >
+                                                                        View Work
+                                                                    </Button>
+                                                                ) : item.assigned
+                                                                    ? new Date().getTime() < parseInt(item.deadline)
+                                                                        ? <Button
+                                                                            data-btn-type="upload"
+                                                                            onClick={() => {
+                                                                                setSelectedAssignment(item);
+                                                                            }}
+                                                                        >
+                                                                            Upload Work
+                                                                        </Button>
+                                                                        : <p>Deadline exceeded</p>
+                                                                    : null}
+                                                            </div>
+                                                        </AssignmentTile>
+                                                    );
+                                                })
+                                            ) : <p>No assignments assigned to you yet</p>
+                                    }
+                                </TileList>
+                            </Main >
+                        )}
+                    </Container >
+                </>
+            )}
+        </>
+    );
 }
 
 const Container = styled.div`

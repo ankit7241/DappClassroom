@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { styled } from "styled-components";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 import getChatHistory from "../../utils/getChatHistory";
+import getAssignments from "../../utils/getAssignments";
 
 import Input from "./Input";
 import Message from "./Message";
@@ -14,6 +16,7 @@ import Huddle from "./Huddle";
 
 export default function Stream({ classData }) {
     const [isMeetOpen, setIsMeetOpen] = useState(false);
+    const navigate = useNavigate();
 
     const shortenAddress = (address, place) => {
         return address?.slice(0, place) + "..." + address?.slice(-place);
@@ -35,6 +38,8 @@ export default function Stream({ classData }) {
 
     const [loading, setLoading] = useState(null);
     const [msgData, setMsgData] = useState(null);
+    const [assignmentLoading, setAssignmentLoading] = useState(false);
+    const [assignmentData, setAssignmentData] = useState(null);
 
     const fetchData = async (id) => {
         const chatHistory = await getChatHistory(id, setLoading);
@@ -58,13 +63,35 @@ export default function Stream({ classData }) {
         }
     };
 
-    // useEffect(() => {
-    //     if (classData && classData.id) {
-    //         (async () => {
-    //             await fetchData(classData.id);
-    //         })();
-    //     }
-    // }, [classData]);
+    const fetchAssignmentsData = async (id) => {
+        const resp = await getAssignments(id, setAssignmentLoading)
+        if (resp.status === "Success") {
+            setAssignmentData(resp.data)
+        }
+        else {
+            toast.error(
+                resp.data.msg,
+                {
+                    position: "top-center",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "dark",
+                }
+            );
+        }
+    };
+    useEffect(() => {
+        if (classData && classData.id) {
+            // Fetching assignments data
+            (async () => {
+                await fetchAssignmentsData(classData?.id);
+            })();
+        }
+    }, [classData])
 
     return (
         <Container>
@@ -90,26 +117,33 @@ export default function Stream({ classData }) {
                     <AssignmentsDiv>
                         <h3>Upcoming</h3>
                         {
-                            classData?.assignments?.length > 0
-                                ? classData.assignments.map((item, ind) => {
-                                    return (
-                                        <div key={ind}>
-                                            <p>
-                                                Due{" "}
-                                                {new Date(parseInt(item.deadline)).toLocaleString(
-                                                    "default",
-                                                    { day: "numeric", month: "long" }
-                                                )}
-                                            </p>
-                                            <h4>
-                                                {item.name.length > 15
-                                                    ? item.name.slice(0, 15) + "..."
-                                                    : item.name}
-                                            </h4>
-                                        </div>
-                                    );
-                                })
-                                : <p>You're all caught up! No assignments found.</p>
+                            assignmentLoading
+                                ? <Loading size="20px" />
+                                : assignmentData && assignmentData.length > 0
+                                    ? <>{
+                                        assignmentData.map((item, ind) => {
+                                            if (new Date().getTime() < parseInt(item.deadline) && !item.marked && !item.submitted) {
+                                                return (
+                                                    <div key={ind}>
+                                                        <p>
+                                                            Due{" "}
+                                                            {new Date(parseInt(item.deadline)).toLocaleString(
+                                                                "default",
+                                                                { day: "numeric", month: "long" }
+                                                            )}
+                                                        </p>
+                                                        <h4 onClick={() => { navigate(`/class/${classData?.id}/1`) }}>
+                                                            {item.name.length > 15
+                                                                ? item.name.slice(0, 15) + "..."
+                                                                : item.name}
+                                                        </h4>
+                                                    </div>
+                                                );
+                                            }
+                                        })}
+                                        <p>No more assignments found.</p>
+                                    </>
+                                    : <p>You're all caught up! No assignments found.</p>
                         }
                     </AssignmentsDiv>
 

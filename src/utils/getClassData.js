@@ -1,4 +1,4 @@
-import { ethers, BigNumber } from "ethers";
+import { ethers } from "ethers";
 
 import { CONTRACT_ADDRESS, ABI } from "../ContractDetails";
 
@@ -15,10 +15,6 @@ export default async function FetchClassData(id) {
                 ABI,
                 signer
             );
-            const accounts = await ethereum.request({
-                method: "eth_requestAccounts",
-            });
-
 
             // Fetching All the Classes a user is enrolled in
             let userClassIds;

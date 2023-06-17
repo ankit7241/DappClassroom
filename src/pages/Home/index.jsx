@@ -45,7 +45,7 @@ export default function Home() {
         (async () => {
             await fetchData();
         })();
-    }, []);
+    }, [showModal]);
 
     // On toggle of Modal, change the scroll mode of body
     useEffect(() => {
@@ -55,7 +55,7 @@ export default function Home() {
         } else {
             document.body.style.overflowY = "scroll";
         }
-    }, [showModal]);
+    }, [isConnected, showModal]);
 
     return (
         <>
@@ -130,6 +130,7 @@ const FallbackCont = styled.div`
 
     button {
         padding: 10px 30px;
+        z-index: 1;
     }
 
     button:nth-child(1) {

@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { styled } from "styled-components";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 // import { useEnsName, useEnsAvatar } from "wagmi";
 
 import leaveClass from "../utils/leaveClass";
+import getAssignments from "../utils/getAssignments";
 
+import Loading from "./Loading";
 import Leave from "../assets/img/leave.svg";
 import Notebook from "../assets/img/notebook.svg";
 
 export default function HomeCard({ _data }) {
-    // const { data: EnsNameData } = useEnsName({
-    //     address: _data?.teacherAddress,
-    //     chainId: 5,
-    // });
+
+    const navigate = useNavigate();
+
+    const [assignmentLoading, setAssignmentLoading] = useState(false);
+    const [assignmentData, setAssignmentData] = useState(null);
 
     const shortenAddress = (address, place) => {
         return address.slice(0, place) + "..." + address.slice(-place);
@@ -22,6 +27,37 @@ export default function HomeCard({ _data }) {
         await leaveClass(_data)
     };
 
+
+    const fetchAssignmentsData = async (id) => {
+        const resp = await getAssignments(id, setAssignmentLoading)
+        if (resp.status === "Success") {
+            setAssignmentData(resp.data)
+        }
+        else {
+            toast.error(
+                resp.data.msg,
+                {
+                    position: "top-center",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "dark",
+                }
+            );
+        }
+    };
+    useEffect(() => {
+        if (_data && _data.id) {
+            // Fetching assignments data
+            (async () => {
+                await fetchAssignmentsData(_data?.id);
+            })();
+        }
+    }, [_data])
+
     return (
         <Container>
             <Top>
@@ -30,19 +66,6 @@ export default function HomeCard({ _data }) {
                 </Link>
                 <h4>{_data.section}</h4>
                 <p>
-                    {/* {EnsNameData ? (
-                        <>
-                            {_data.teacherName}{" "}
-                            <span title={_data.teacherAddress}>({EnsNameData})</span>
-                        </>
-                    ) : (
-                        <>
-                            {_data.teacherName}{" "}
-                            <span title={_data.teacherAddress}>
-                                ({shortenAddress(_data.teacherAddress, 4)})
-                            </span>
-                        </>
-                    )} */}
                     <>
                         {_data.teacherName}{" "}
                         <span title={_data.teacherAddress}>
@@ -52,33 +75,41 @@ export default function HomeCard({ _data }) {
                 </p>
             </Top>
             <Middle>
-                {!_data.assignments || _data.assignments.length === 0 ? (
-                    <p>No work pending :)</p>
-                ) : (
-                    <>
-                        {_data?.assignments.map((item, ind) => {
-                            if (ind < 2) {
-                                return (
-                                    <div key={ind}>
-                                        <p>
-                                            Due{" "}
-                                            {new Date(parseInt(item.deadline)).toLocaleString(
-                                                "default",
-                                                { day: "numeric", month: "long" }
-                                            )}
-                                        </p>
-                                        <h4>
-                                            {item.name.length > 27
-                                                ? item.name.slice(0, 27) + "..."
-                                                : item.name}
-                                        </h4>
-                                    </div>
-                                );
-                            }
-                        })}
-                        <StyledLink to={`/class/${_data.id}`}>View All →</StyledLink>
-                    </>
-                )}
+
+
+                {
+                    assignmentLoading
+                        ? <Loading size="50px" />
+                        : assignmentData && assignmentData.length > 0
+                            ? <>{
+                                assignmentData.map((item, ind) => {
+                                    if (new Date().getTime() < parseInt(item.deadline) && !item.marked && !item.submitted) {
+                                        return (
+                                            <>
+                                                <div key={ind}>
+                                                    <p>
+                                                        Due{" "}
+                                                        {new Date(parseInt(item.deadline)).toLocaleString(
+                                                            "default",
+                                                            { day: "numeric", month: "long" }
+                                                        )}
+                                                    </p>
+                                                    <h4 onClick={() => { navigate(`/class/${_data?.id}/1`) }}>
+                                                        {item.name.length > 25
+                                                            ? item.name.slice(0, 25) + "..."
+                                                            : item.name}
+                                                    </h4>
+                                                </div>
+                                                <StyledLink to={`/class/${_data?.id}/1`}>View All →</StyledLink>
+                                            </>
+                                        );
+                                    }
+                                })}
+
+                                <p>No work pending :)</p>
+                            </>
+                            : <p>No work pending :)</p>
+                }
             </Middle>
             <Bottom>
                 <div>
