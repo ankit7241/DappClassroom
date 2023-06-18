@@ -21,6 +21,7 @@ const { chains, publicClient, webSocketPublicClient } = configureChains(
 
 const { connectors } = getDefaultWallets({
     appName: 'Dapp Classroom',
+    projectId: "2766319f331ea275c49892f171146c73",
     chains,
 });
 
