@@ -3,7 +3,8 @@ import { styled } from "styled-components";
 import { toast } from "react-toastify";
 import { ethers } from "ethers";
 import * as PushAPI from "@pushprotocol/restapi";
-import { CONTRACT_ADDRESS, ABI } from "../../../ContractDetails";
+
+import getEnsData from "../../../utils/getEnsData";
 
 import Input from "./Input";
 import Button from "../../../components/Button";
@@ -163,8 +164,8 @@ export default function Modal({ data, setShowModal, showModal }) {
                         <div>
                             {msgData ? (
                                 msgData.length > 0 ? (
-                                    msgData?.map((item) => {
-                                        return <Message data={item} />;
+                                    msgData?.map((item, ind) => {
+                                        return <Message key={ind} data={item} />;
                                     })
                                 ) : (
                                     <p style={{ textAlign: "center" }}>No messages found</p>
@@ -222,43 +223,6 @@ const Main = styled.div`
 		display: flex;
 		flex-direction: column;
 		gap: 15px;
-
-		/* input,
-		textarea {
-			display: flex;
-			flex-direction: row;
-			align-items: center;
-			padding: 10px 20px;
-			gap: 15px;
-
-			background: rgba(255, 255, 255, 0.05);
-			border: 1px solid rgba(255, 255, 255, 0.2);
-			border-radius: 10px;
-			outline: none;
-
-			font-family: Groteska;
-			font-size: var(--font-md);
-			line-height: 125%;
-			color: rgba(255, 255, 255, 0.8);
-		}
-
-		textarea {
-			height: 100px;
-			resize: vertical;
-		} */
-
-		/* div {
-			display: flex;
-			flex-direction: row;
-			justify-content: center;
-			align-items: center;
-			gap: 10px;
-			width: 100%;
-
-			input {
-				flex: 1;
-			}
-		} */
 	}
 
 	& > p {
@@ -288,17 +252,35 @@ const StyledButton = styled(Button)`
 `;
 
 const Message = ({ data }) => {
+
+    const [ensName, setEnsName] = useState(null);
+    const [ensAvatar, setEnsAvatar] = useState(null);
+
     const shortenAddress = (address, place) => {
         return address.slice(0, place) + "..." + address.slice(-place);
     };
 
+    useEffect(() => {
+        if (data.from) {
+            (async () => {
+                const { EnsName, EnsAvatar } = await getEnsData(data.from);
+                setEnsName(EnsName)
+                setEnsAvatar(EnsAvatar)
+            })();
+        }
+    }, [data]);
+
     return (
         <MsgContainer>
             <MsgTop>
-                <img src={avatar} alt="" />
+                <img src={ensAvatar ? ensAvatar : avatar} alt="" />
                 <div>
                     <p>
-                        <span title={data.from}>({shortenAddress(data.from, 4)})</span>
+                        {
+                            ensName
+                                ? <>{data.fromName} <span title={data.from}>({ensName})</span></>
+                                : <>{data.fromName} <span title={data.from}>({shortenAddress(data.from, 4)})</span></>
+                        }
                     </p>
                     <p>
                         {new Date(parseInt(data.timestamp)).toLocaleTimeString("en-us", {

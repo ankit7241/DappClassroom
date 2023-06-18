@@ -5,20 +5,27 @@ import { useAccount } from "wagmi";
 
 import { ethers } from "ethers";
 import { CONTRACT_ADDRESS, ABI } from "../../ContractDetails";
+
 import isTeacher from "../../utils/isTeacher";
+import getEnsData from "../../utils/getEnsData";
 
 import Loading from "../../components/Loading";
 import avatar from "../../assets/img/placeholder_avatar.png";
 
+
 export default function People({ classData }) {
+
     const { address } = useAccount();
 
     const [people, setPeople] = useState(null);
     const [isUserTeacher, setIsUserTeacher] = useState(false);
     const [teacherAddress, setTeacherAddress] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [teacherEnsName, setTeacherEnsName] = useState(null);
+    const [teacherEnsAvatar, setTeacherEnsAvatar] = useState(null);
+    const [isStudentsLoading, setIsStudentsLoading] = useState(false);
 
     const fetchData = async (id) => {
+        setIsStudentsLoading(true);
         try {
             const { ethereum } = window;
 
@@ -39,11 +46,14 @@ export default function People({ classData }) {
                 // Making an Array of all class Ids a user is enrolled in
                 const userClassIdArray = userClassIds.split(",").map(String);
 
-
                 let Data = [];
                 for (let i = 0; i < userClassIdArray.length; i++) {
+                    const { EnsName, EnsAvatar } = await getEnsData(userClassIdArray[i].toString());
+
                     const fetchedObject = {
                         address: `${userClassIdArray[i].toString()}`,
+                        EnsName,
+                        EnsAvatar
                     };
 
                     Data.push(fetchedObject);
@@ -56,10 +66,11 @@ export default function People({ classData }) {
                     setPeople(Data);
                 }
 
-                setIsLoading(false);
+                setIsStudentsLoading(false);
             }
         } catch (error) {
             console.log(error);
+            setIsStudentsLoading(false);
         }
     };
 
@@ -73,6 +84,9 @@ export default function People({ classData }) {
                 if (temp.status === "Success") {
                     setIsUserTeacher(temp.data.data);
                     setTeacherAddress(temp.data.teacherAddress)
+                    const { EnsName, EnsAvatar } = await getEnsData(temp.data.teacherAddress);
+                    setTeacherEnsName(EnsName)
+                    setTeacherEnsAvatar(EnsAvatar)
                 } else {
                     toast.error(temp.data.msg, {
                         position: "top-center",
@@ -91,50 +105,55 @@ export default function People({ classData }) {
 
     return (
         <Container>
-            {isLoading ? (
-                <Loading />
-            ) : (
-                <Main>
-                    <PeopleTile style={{ background: "rgba(255, 255, 255, 0.15)" }} >
-                        <div>
-                            {/* <img src={item.ensAvatar ? item.ensAvatar : avatar} /> */}
-                            <img src={avatar} />
-                            <p>{teacherAddress ? teacherAddress : "Loading..."}</p>
-                        </div>
-                        <p>Teacher</p>
-                    </PeopleTile>
+            <Main>
+                <PeopleTile style={{ background: "rgba(255, 255, 255, 0.15)" }} >
+                    <div>
+                        <img src={teacherEnsAvatar ? teacherEnsAvatar : avatar} />
+                        <p>{teacherAddress ? teacherEnsName ? teacherEnsName : teacherAddress : "Loading..."}</p>
+                    </div>
+                    <p>Teacher</p>
+                </PeopleTile>
 
-                    <TileList>
-                        {people && people.length > 0 ? (
-                            people.map((item, ind) => {
-                                return (
-                                    <PeopleTile
-                                        key={ind}
-                                        style={
-                                            address === item.address
-                                                ? { background: "rgba(255, 255, 255, 0.15)" }
-                                                : undefined
-                                        }
-                                    >
-                                        <div>
-                                            <img
-                                                src={item.ensAvatar ? item.ensAvatar : avatar}
-                                                alt=""
-                                            />
-                                            <p>
-                                                {item.address}
-                                            </p>
-                                        </div>
-                                        <p>Student</p>
-                                    </PeopleTile>
-                                );
-                            })
-                        ) : (
-                            <p>No Students in the classroom</p>
-                        )}
-                    </TileList>
-                </Main>
-            )}
+                <TileList>
+                    {
+                        isStudentsLoading
+                            ? <Loading />
+                            : people && people.length > 0
+                                ? people.map((item, ind) => {
+                                    return (
+                                        <PeopleTile
+                                            key={ind}
+                                            style={
+                                                address === item.address
+                                                    ? { background: "rgba(255, 255, 255, 0.15)" }
+                                                    : undefined
+                                            }
+                                        >
+                                            <div>
+                                                <img
+                                                    src={item.EnsAvatar ? item.EnsAvatar : avatar}
+                                                    alt=""
+                                                />
+                                                <p>
+                                                    {
+                                                        item.EnsName
+                                                            ? <>
+                                                                {item.EnsName}
+                                                                <span>({item.address.slice(0, 6)}...{item.address.slice(-6)})</span>
+                                                            </>
+                                                            : item.address
+                                                    }
+                                                </p>
+                                            </div>
+                                            <p>Student</p>
+                                        </PeopleTile>
+                                    );
+                                })
+
+                                : <p>No Students in the classroom</p>
+                    }
+                </TileList>
+            </Main>
         </Container>
     );
 }
@@ -158,14 +177,6 @@ const Main = styled.div`
 	align-items: flex-start;
 	justify-content: center;
 	gap: 50px;
-	width: 100%;
-`;
-const TopDiv = styled.div`
-	display: flex;
-	flex-direction: row;
-	justify-content: flex-end;
-	align-items: center;
-	gap: 10px;
 	width: 100%;
 `;
 const TileList = styled.div`
@@ -218,6 +229,14 @@ const PeopleTile = styled.div`
 			font-size: var(--font-md);
 			line-height: 125%;
 			color: rgba(255, 255, 255, 0.75);
+
+            span {
+                margin-left: 7px;
+                font-weight: 400;
+                font-size: var(--font-sm);
+                line-height: 125%;
+                color: rgba(255, 255, 255, 0.33);
+            }
 		}
 	}
 

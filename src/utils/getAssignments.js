@@ -1,7 +1,11 @@
 import { ethers } from "ethers";
 import { CONTRACT_ADDRESS, ABI } from "../ContractDetails";
 
-export default async function fetchAssignmentsData(id, setLoading) {
+export default async function fetchAssignmentsData(
+    id,
+    setLoading,
+    studentAccount
+) {
     setLoading(true);
     try {
         const { ethereum } = window;
@@ -37,7 +41,7 @@ export default async function fetchAssignmentsData(id, setLoading) {
                 // Fetching Student Status
                 let studentStatus;
                 await connectedContract
-                    .getStudentStatus(`${id}`, `${i}`)
+                    .getStudentStatus(`${id}`, `${i}`, `${studentAccount}`)
                     .then((classIdCount) => {
                         studentStatus = `${classIdCount}`;
                     });
@@ -46,7 +50,7 @@ export default async function fetchAssignmentsData(id, setLoading) {
                 let studentMarks = 0;
                 try {
                     await connectedContract
-                        .getStudentMarks(`${id}`, `${i}`)
+                        .getStudentMarks(`${id}`, `${i}`, `${studentAccount}`)
                         .then((classIdCount) => {
                             studentMarks = `${classIdCount}`;
                         });
@@ -58,7 +62,7 @@ export default async function fetchAssignmentsData(id, setLoading) {
                 let studentAssignment = null;
                 try {
                     await connectedContract
-                        .getStudentAssignmentCID(`${id}`, `${i}`)
+                        .getStudentAssignmentCID(`${id}`, `${i}`, `${studentAccount}`)
                         .then((classIdCount) => {
                             studentAssignment = `${classIdCount}`;
                         });
@@ -86,7 +90,6 @@ export default async function fetchAssignmentsData(id, setLoading) {
                     }
                 }
 
-
                 // Fetching Assignment data from IPFS
                 const url = `https://ipfs.io/ipfs/${assignmentDescCID}`;
                 const res = await fetch(url);
@@ -102,7 +105,7 @@ export default async function fetchAssignmentsData(id, setLoading) {
                     assignment: `${data.assignmentFileCID}`,
                     studentAssignment: `${studentAssignment}`,
                     maxMarks: `${data.maximumMarks}`,
-                    scroredMarks: studentMarks,
+                    scoredMarks: studentMarks,
                     assigned: assigned,
                     completed: completed,
                     marked: marked,
@@ -114,22 +117,32 @@ export default async function fetchAssignmentsData(id, setLoading) {
             setLoading(false);
             return { status: "Success", data: Data };
         } else {
-            setLoading(false)
+            setLoading(false);
             console.log("Ethereum object doesn't exist!");
-            return { status: "Error", data: { err: null, msg: "Some problem with Metamask! Please try again" } };
+            return {
+                status: "Error",
+                data: {
+                    err: null,
+                    msg: "Some problem with Metamask! Please try again",
+                },
+            };
         }
     } catch (error) {
         console.log(error);
-        setLoading(false)
+        setLoading(false);
 
         if (error.error?.data?.message?.includes("Create class or join one")) {
-            return { status: "Error", data: { err: error, msg: "You are not enrolled in any classroom!" } };
-        }
-        else if (error.toString().includes("invalid BigNumber")) {
+            return {
+                status: "Error",
+                data: { err: error, msg: "You are not enrolled in any classroom!" },
+            };
+        } else if (error.toString().includes("invalid BigNumber")) {
             return { status: "Success", data: [] };
-        }
-        else {
-            return { status: "Error", data: { err: error, msg: "Unexpected error occurred!" } };
+        } else {
+            return {
+                status: "Error",
+                data: { err: error, msg: "Unexpected error occurred!" },
+            };
         }
     }
-};
+}

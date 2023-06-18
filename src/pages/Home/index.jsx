@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import { styled } from "styled-components";
 import { useAccount } from "wagmi";
 import { toast } from "react-toastify";
+
 import getClassData from "../../utils/getClassData"
+import getEnsData from "../../utils/getEnsData";
 
 import HomeCard from "../../components/HomeCard";
 import Loading from "../../components/Loading";
@@ -13,39 +15,41 @@ import NoClassSvg from "../../assets/img/no_class.svg";
 import Modal from "../../components/AddClass/Modal";
 
 export default function Home() {
-    const { isConnected } = useAccount();
+    const { isConnected, address } = useAccount();
 
     const [classes, setClasses] = useState([]);
     const [loading, setLoading] = useState([]);
     const [showModal, setShowModal] = useState(false);
 
     const fetchData = async () => {
-        setLoading(true)
-        const data = await getClassData();
+        if (isConnected, address) {
+            setLoading(true)
+            const data = await getClassData();
 
-        if (data.status === "Error") {
-            toast.error(data.data.msg, {
-                position: "top-center",
-                autoClose: 3000,
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: "dark",
-            });
-            setClasses([]);
-        } else {
-            setClasses(data.data);
+            if (data.status === "Error") {
+                toast.error(data.data.msg, {
+                    position: "top-center",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "dark",
+                });
+                setClasses([]);
+            } else {
+                setClasses(data.data);
+            }
+            setLoading(false)
         }
-        setLoading(false)
     };
 
     useEffect(() => {
         (async () => {
             await fetchData();
         })();
-    }, [showModal]);
+    }, [showModal, isConnected, address]);
 
     // On toggle of Modal, change the scroll mode of body
     useEffect(() => {

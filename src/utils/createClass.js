@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import storeFiles from "./storeOnIPFS"
 
 export default async function createClass(className, section, teacherName, setLoadMessage, setShowModal) {
+    setLoadMessage("Loading...")
     try {
         const { ethereum } = window;
 
@@ -21,6 +22,17 @@ export default async function createClass(className, section, teacherName, setLo
                 method: "eth_requestAccounts",
             });
 
+            setLoadMessage("Fetching details...")
+            try {
+                const user = await PushAPI.user.create({
+                    account: `eip155:${accounts[0]}`,
+                    env: "staging",
+                    signer: signer
+                });
+            }
+            catch (e) {
+                console.log(e)
+            }
             const user = await PushAPI.user.get({
                 account: `eip155:${accounts[0]}`,
                 env: "staging",
@@ -96,6 +108,7 @@ export default async function createClass(className, section, teacherName, setLo
         } else {
             console.log("Ethereum object doesn't exist!");
 
+            setLoadMessage(null)
             toast.error("Some problem with Metamask! Please try again", {
                 position: "top-center",
                 autoClose: 3000,

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAccount } from "wagmi";
 import { toast } from "react-toastify";
 
 import getClassData from "../../utils/getClassData";
 import isTeacher from "../../utils/isTeacher";
+import getEnsData from "../../utils/getEnsData";
 
 import Header from "./Header";
 import Stream from "./Stream";
@@ -48,6 +49,9 @@ export default function Class() {
             setClassData([])
 
         } else {
+            const { EnsName, EnsAvatar } = await getEnsData(data.data.teacherAddress);
+            data.data.teacherEnsName = EnsName;
+            data.data.teacherEnsAvatar = EnsAvatar;
             setClassData(data.data);
         }
 
@@ -62,7 +66,6 @@ export default function Class() {
 
             // Checking if the user is a teacher
             (async () => {
-                setLoading(true)
                 const temp = await isTeacher(classId);
                 if (temp.status === "Success") {
                     setIsUserTeacher(temp.data.data);
@@ -78,7 +81,6 @@ export default function Class() {
                         theme: "dark",
                     });
                 }
-                setLoading(false)
             })();
         }
     }, [classId, address]);

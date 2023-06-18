@@ -4,12 +4,12 @@ import { styled } from "styled-components";
 import { toast } from "react-toastify";
 import { ethers } from "ethers";
 import { CONTRACT_ADDRESS, ABI } from "../../../ContractDetails";
-import storeFiles from "../../../utils/storeOnIPFS";
+import { storeImage } from "../../../utils/storeOnIPFS";
 
 import Button from "../../../components/Button";
 import Loading from "../../../components/Loading";
 
-export default function AssignmentDetail({ data, isUserTeacher }) {
+export default function AssignmentDetail({ data, isUserTeacher, setSelectedAssignment }) {
 
     const [assignmentFile, setAssignmentFile] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +31,7 @@ export default function AssignmentDetail({ data, isUserTeacher }) {
                 );
 
                 setLoadingText("Uploading work...")
-                const assignmentFileCID = await storeFiles(assignmentFile);
+                const assignmentFileCID = await storeImage(assignmentFile);
 
                 setLoadingText("Submitting...")
                 let completedAssigment = await connectedContract.completedAssigment(
@@ -55,6 +55,7 @@ export default function AssignmentDetail({ data, isUserTeacher }) {
 
                 setIsLoading(false);
                 setLoadingText(null);
+                setSelectedAssignment(null)
             } else {
                 console.log("Ethereum object doesn't exist!");
 
@@ -93,7 +94,6 @@ export default function AssignmentDetail({ data, isUserTeacher }) {
         }
     };
 
-
     return (
         <>
             <Container data-center={isLoading ? "true" : "false"}>
@@ -122,12 +122,12 @@ export default function AssignmentDetail({ data, isUserTeacher }) {
                             <DescDiv>
                                 <p>{data.description}</p>
                             </DescDiv>
-                            <Link
-                                to={{ pathname: data.assignment }}
+                            <a
+                                href={`https://ipfs.io/ipfs/${data.assignment}`}
                                 target="_blank"
                             >
                                 Open Assignment →
-                            </Link>
+                            </a>
                         </Main>
                         <Right>
                             <div>
@@ -137,7 +137,7 @@ export default function AssignmentDetail({ data, isUserTeacher }) {
                                 ) : data.completed ? (
                                     <p data-type="yellow">Submitted</p>
                                 ) : data.marked ? (
-                                    <p data-type="green">{`Scored: ${data.scroredMarks}`}</p>
+                                    <p data-type="green">{`Scored: ${data.scoredMarks}`}</p>
                                 ) : (
                                     new Date().getTime() > parseInt(data.deadline) && (
                                         <p data-type="red">Deadline exceeded</p>
@@ -161,12 +161,12 @@ export default function AssignmentDetail({ data, isUserTeacher }) {
                                     </Button>
                                 </>
                             ) : (
-                                <Link
-                                    to={{ pathname: data.studentAssignment }}
+                                <a
+                                    href={`https://ipfs.io/ipfs/${data.studentAssignment}`}
                                     target="_blank"
                                 >
                                     Open Your Work →
-                                </Link>
+                                </a>
                             )}
                         </Right>
                     </div>

@@ -1,17 +1,23 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi'
-// import { useEnsName, useAccount } from 'wagmi'
 import Button from './Button';
+import getEnsData from '../utils/getEnsData';
 
 export default function ConnectWalletButton() {
 
     const { address } = useAccount();
 
-    // const { data: EnsNameData } = useEnsName({
-    //     address: address,
-    //     chainId: 5
-    // })
+    const [userEnsName, setUserEnsName] = useState(null);
+
+    useEffect(() => {
+        if (address) {
+            (async () => {
+                const { EnsName, EnsAvatar } = await getEnsData(address);
+                setUserEnsName(EnsName)
+            })();
+        }
+    }, [address]);
 
     return (
         <ConnectButton.Custom>
@@ -63,8 +69,7 @@ export default function ConnectWalletButton() {
                             return (
                                 <div style={{ display: 'flex', gap: 12 }}>
                                     <Button onClick={openAccountModal} type="button" title={account.address}>
-                                        {/* {EnsNameData ? EnsNameData : account.displayName} */}
-                                        {account.displayName}
+                                        {userEnsName ? userEnsName : account.displayName}
                                         {account.displayBalance
                                             ? ` (${account.displayBalance})`
                                             : ''}

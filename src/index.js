@@ -6,14 +6,13 @@ import reportWebVitals from './reportWebVitals';
 
 import '@rainbow-me/rainbowkit/styles.css';
 import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit';
-import { configureChains, createConfig, mainnet, WagmiConfig } from 'wagmi';
-import { filecoin, filecoinHyperspace, filecoinCalibration, goerli } from 'wagmi/chains';
+import { configureChains, createConfig, WagmiConfig } from 'wagmi';
+import { filecoinCalibration } from 'wagmi/chains';
 import { publicProvider } from 'wagmi/providers/public';
 import { infuraProvider } from 'wagmi/providers/infura';
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
     [
-        filecoin,
         filecoinCalibration
     ],
     [infuraProvider({ apiKey: process.env.REACT_APP_INFURA_API_KEY }), publicProvider()]
