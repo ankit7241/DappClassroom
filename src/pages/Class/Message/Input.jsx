@@ -3,7 +3,7 @@ import { styled } from "styled-components";
 import { useAccount } from "wagmi";
 import { ethers } from "ethers";
 import * as PushAPI from "@pushprotocol/restapi";
-import { CONTRACT_ADDRESS, ABI } from "../../../ContractDetails";
+
 // import { useAccount, useEnsAvatar, useEnsName } from "wagmi";
 
 import Button from "../../../components/Button";
@@ -24,10 +24,11 @@ export default function Input({ data }) {
 
     const [loadMsg, setLoadMsg] = useState(null);
     const [alreadyExists, setAlreadyExists] = useState(false);
+
     const [textInp, setTextInp] = useState("");
 
     const sendMessage = async () => {
-        setLoadMsg("Loading...")
+        setLoadMsg("Loading...");
         try {
             const { ethereum } = window;
 
@@ -40,8 +41,8 @@ export default function Input({ data }) {
 
                 const message = data.message;
 
-                const startMarker = "****###@@";
-                const endMarker = "####***@@";
+                const startMarker = "**###@@";
+                const endMarker = "####*@@";
 
                 const startIndex = message.indexOf(startMarker) + startMarker.length;
                 const endIndex = message.indexOf(endMarker);
@@ -66,18 +67,18 @@ export default function Input({ data }) {
                     env: "staging",
                 });
 
-                const arrayOfPreviousMembers = groupDetails.members.map(
-                    (name, index) => {
+                const arrayOfPreviousMembers = await Promise.all(
+                    groupDetails.members.map((name, index) => {
                         const str = groupDetails.members[index].wallet.slice(7, 49);
                         if (accounts[0] == str) {
                             setAlreadyExists(true);
                         }
                         return str;
-                    }
+                    })
                 );
 
-                setLoadMsg("Sending Message...")
-                if (!alreadyExists) {
+                console.log(arrayOfPreviousMembers);
+                try {
                     await PushAPI.chat.updateGroup({
                         chatId: `${chatId}`,
                         groupName: `${groupDetails.groupName}`,
@@ -97,7 +98,9 @@ export default function Input({ data }) {
                         senderAddress: `${chatId}`, // receiver's address or chatId of a group
                         env: "staging",
                     });
-                }
+                } catch (error) { }
+
+                setLoadMsg("Sending Message...");
 
                 // actual api
                 await PushAPI.chat.send({
@@ -109,7 +112,7 @@ export default function Input({ data }) {
                     env: "staging",
                 });
 
-                setLoadMsg(null)
+                setLoadMsg(null);
                 toast.success("Message was sent to the class successfully!", {
                     position: "top-center",
                     autoClose: 3000,
@@ -122,7 +125,7 @@ export default function Input({ data }) {
                 });
             } else {
                 console.log("Ethereum object doesn't exist!");
-                setLoadMsg(null)
+                setLoadMsg(null);
                 toast.error("Some problem with Metamask! Please try again", {
                     position: "top-center",
                     autoClose: 3000,
@@ -136,7 +139,7 @@ export default function Input({ data }) {
             }
         } catch (error) {
             console.log(error);
-            setLoadMsg(null)
+            setLoadMsg(null);
             toast.error("Some error was encountered while sending the message !", {
                 position: "top-center",
                 autoClose: 3000,

@@ -1,25 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { styled } from "styled-components";
 import { useAccount } from "wagmi";
 import { toast } from "react-toastify";
-// import { useAccount, useEnsAvatar, useEnsName } from "wagmi";
+
+import sendPushChatMessage from "../../utils/sendPushChatMessage";
+import getEnsData from "../../utils/getEnsData";
 
 import Button from "../../components/Button";
-
 import avatar from "../../assets/img/placeholder_avatar.png";
-import sendPushChatMessage from "../../utils/sendPushChatMessage";
 
 export default function Input({ classData }) {
     const { address } = useAccount();
 
-    // const { data: EnsNameData } = useEnsName({
-    //     address: address,
-    // });
-
-    // const { data: EnsAvatarData } = useEnsAvatar({
-    //     name: EnsNameData,
-    // });
-
+    const [userAvatar, setUserAvatar] = useState(null);
     const [loadMsg, setLoadMsg] = useState(null);
     const [textInp, setTextInp] = useState("");
 
@@ -41,10 +34,19 @@ export default function Input({ classData }) {
         }
     };
 
+    useEffect(() => {
+        if (address) {
+            (async () => {
+                const { EnsName, EnsAvatar } = await getEnsData(address);
+                setUserAvatar(EnsAvatar)
+            })();
+        }
+    }, [address]);
+
+
     return (
         <Container>
-            {/* <img src={EnsAvatarData ? EnsAvatarData : avatar} alt="" /> */}
-            <img src={avatar} alt="" />
+            <img src={userAvatar ? userAvatar : avatar} alt="" />
             <div>
                 <textarea
                     type="text"

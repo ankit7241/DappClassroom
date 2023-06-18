@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { styled } from "styled-components";
 import { toast } from "react-toastify";
+import { useAccount } from "wagmi";
 
 import isTeacher from "../../../utils/isTeacher";
 import getAssignments from "../../../utils/getAssignments";
@@ -13,6 +14,9 @@ import Modal from "./Modal";
 import AssignmentDetail from "./AssignmentDetail";
 
 export default function Assignments({ classData }) {
+
+    const { isConnected, address } = useAccount()
+
     const [assignments, setAssignments] = useState(null);
     const [isUserTeacher, setIsUserTeacher] = useState(false);
     const [showModal, setShowModal] = useState(false);
@@ -20,7 +24,7 @@ export default function Assignments({ classData }) {
     const [selectedAssignment, setSelectedAssignment] = useState(null);
 
     const fetchData = async (id) => {
-        const resp = await getAssignments(id, setIsLoading)
+        const resp = await getAssignments(id, setIsLoading, address)
         if (resp.status === "Success") {
             setAssignments(resp.data)
         }
@@ -42,7 +46,7 @@ export default function Assignments({ classData }) {
     };
 
     useEffect(() => {
-        if (classData && classData.id) {
+        if (classData && classData.id && address) {
             // Fetching assignments data
             (async () => {
                 await fetchData(classData.id);
@@ -67,7 +71,7 @@ export default function Assignments({ classData }) {
                 }
             })();
         }
-    }, [classData, showModal]);
+    }, [classData, showModal, isConnected, address, selectedAssignment]);
 
     // On toggle of Modal, change the scroll mode of body
     useEffect(() => {
@@ -85,6 +89,7 @@ export default function Assignments({ classData }) {
                 <AssignmentDetail
                     data={selectedAssignment}
                     isUserTeacher={isUserTeacher}
+                    setSelectedAssignment={setSelectedAssignment}
                 />
             ) : (
                 <>
@@ -170,7 +175,7 @@ export default function Assignments({ classData }) {
 
                                                             <p>
                                                                 {item.marked
-                                                                    ? `Scored ${item.scroredMarks}/${item.maxMarks}`
+                                                                    ? `Scored ${item.scoredMarks}/${item.maxMarks}`
                                                                     : item.completed
                                                                         ? `Assignment Submitted`
                                                                         : <>

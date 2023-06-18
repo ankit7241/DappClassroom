@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { styled } from "styled-components";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { useAccount } from "wagmi";
 
 import getChatHistory from "../../utils/getChatHistory";
 import getAssignments from "../../utils/getAssignments";
@@ -15,6 +16,9 @@ import Button from "../../components/Button";
 import Huddle from "./Huddle";
 
 export default function Stream({ classData }) {
+
+    const { isConnected, address } = useAccount()
+
     const [isMeetOpen, setIsMeetOpen] = useState(false);
     const navigate = useNavigate();
 
@@ -64,9 +68,12 @@ export default function Stream({ classData }) {
     };
 
     const fetchAssignmentsData = async (id) => {
-        const resp = await getAssignments(id, setAssignmentLoading)
+        const resp = await getAssignments(id, setAssignmentLoading, address)
         if (resp.status === "Success") {
-            setAssignmentData(resp.data)
+            const modifiedData = resp.data.filter((item) => {
+                return (new Date().getTime() < parseInt(item.deadline) && !item.marked && !item.completed)
+            })
+            setAssignmentData(modifiedData)
         }
         else {
             toast.error(
@@ -82,16 +89,19 @@ export default function Stream({ classData }) {
                     theme: "dark",
                 }
             );
+            if (resp.data.msg === "You are not a member of this classroom!") {
+                navigate("/")
+            }
         }
     };
     useEffect(() => {
-        if (classData && classData.id) {
+        if (classData && classData.id, address) {
             // Fetching assignments data
             (async () => {
                 await fetchAssignmentsData(classData?.id);
             })();
         }
-    }, [classData])
+    }, [classData, isConnected, address])
 
     return (
         <Container>
@@ -100,7 +110,11 @@ export default function Stream({ classData }) {
                 <h4>{classData?.section}</h4>
                 <p>
                     {classData?.teacherName}{" "}
-                    <span>({shortenAddress(classData?.teacherAddress, 4)})</span>
+                    <span>({
+                        classData?.teacherEnsName
+                            ? classData?.teacherEnsName
+                            : shortenAddress(classData?.teacherAddress, 4)
+                    })</span>
                 </p>
             </Top>
 
@@ -122,26 +136,24 @@ export default function Stream({ classData }) {
                                 : assignmentData && assignmentData.length > 0
                                     ? <>{
                                         assignmentData.map((item, ind) => {
-                                            if (new Date().getTime() < parseInt(item.deadline) && !item.marked && !item.submitted) {
-                                                return (
-                                                    <div key={ind}>
-                                                        <p>
-                                                            Due{" "}
-                                                            {new Date(parseInt(item.deadline)).toLocaleString(
-                                                                "default",
-                                                                { day: "numeric", month: "long" }
-                                                            )}
-                                                        </p>
-                                                        <h4 onClick={() => { navigate(`/class/${classData?.id}/1`) }}>
-                                                            {item.name.length > 15
-                                                                ? item.name.slice(0, 15) + "..."
-                                                                : item.name}
-                                                        </h4>
-                                                    </div>
-                                                );
-                                            }
+                                            return (
+                                                <div key={ind}>
+                                                    <p>
+                                                        Due{" "}
+                                                        {new Date(parseInt(item.deadline)).toLocaleString(
+                                                            "default",
+                                                            { day: "numeric", month: "long" }
+                                                        )}
+                                                    </p>
+                                                    <h4 onClick={() => { navigate(`/class/${classData?.id}/1`) }}>
+                                                        {item.name.length > 15
+                                                            ? item.name.slice(0, 15) + "..."
+                                                            : item.name}
+                                                    </h4>
+                                                </div>
+                                            );
+
                                         })}
-                                        <p>No more assignments found.</p>
                                     </>
                                     : <p>You're all caught up! No assignments found.</p>
                         }

@@ -5,7 +5,7 @@ import { CONTRACT_ADDRESS, ABI } from "../../../ContractDetails";
 import { toast } from "react-toastify";
 
 import Button from "../../../components/Button";
-import storeFiles from "../../../utils/storeOnIPFS";
+import storeFiles, { storeImage } from "../../../utils/storeOnIPFS";
 import isTeacher from "../../../utils/isTeacher";
 
 export default function Modal({ id, setShowModal, showModal }) {
@@ -32,7 +32,7 @@ export default function Modal({ id, setShowModal, showModal }) {
                 );
 
                 setLoadMessage("Uploading data on IPFS...")
-                const assignmentFileCID = await storeFiles(assignmentFile);
+                const assignmentFileCID = await storeImage(assignmentFile);
 
                 const submissionDeadline = new Date(deadline).getTime();
 
@@ -40,7 +40,7 @@ export default function Modal({ id, setShowModal, showModal }) {
                 const metadata = JSON.stringify({
                     assignmentName: `${assignmentName}`,
                     assignmentDesc: `${assignmentDesc}`,
-                    asignmentFileCID: `${assignmentFileCID}`,
+                    assignmentFileCID: `${assignmentFileCID}`,
                     deadline: `${submissionDeadline}`,
                     maximumMarks: `${marks}`,
                 });
@@ -162,6 +162,7 @@ export default function Modal({ id, setShowModal, showModal }) {
                     </div>
 
                     <StyledButton onClick={handleCreate}>
+                        {/* <StyledButton onClick={() => console.log(assignmentFile)}> */}
                         {loadMessage ? (
                             <>
                                 {loadMessage} <Loader />

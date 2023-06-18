@@ -3,10 +3,11 @@ import { styled } from "styled-components";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-// import { useEnsName, useEnsAvatar } from "wagmi";
+import { useAccount } from "wagmi";
 
 import leaveClass from "../utils/leaveClass";
 import getAssignments from "../utils/getAssignments";
+import getEnsData from "../utils/getEnsData";
 
 import Loading from "./Loading";
 import Leave from "../assets/img/leave.svg";
@@ -14,10 +15,13 @@ import Notebook from "../assets/img/notebook.svg";
 
 export default function HomeCard({ _data }) {
 
+    const { address } = useAccount();
+
     const navigate = useNavigate();
 
     const [assignmentLoading, setAssignmentLoading] = useState(false);
     const [assignmentData, setAssignmentData] = useState(null);
+    const [teacherEns, setTeacherEns] = useState(null);
 
     const shortenAddress = (address, place) => {
         return address.slice(0, place) + "..." + address.slice(-place);
@@ -27,11 +31,13 @@ export default function HomeCard({ _data }) {
         await leaveClass(_data)
     };
 
-
     const fetchAssignmentsData = async (id) => {
-        const resp = await getAssignments(id, setAssignmentLoading)
+        const resp = await getAssignments(id, setAssignmentLoading, address)
         if (resp.status === "Success") {
-            setAssignmentData(resp.data)
+            const modifiedData = resp.data.filter((item) => {
+                return (new Date().getTime() < parseInt(item.deadline) && !item.marked && !item.completed)
+            })
+            setAssignmentData(modifiedData)
         }
         else {
             toast.error(
@@ -50,13 +56,19 @@ export default function HomeCard({ _data }) {
         }
     };
     useEffect(() => {
-        if (_data && _data.id) {
+        if (_data && _data.id && address) {
             // Fetching assignments data
             (async () => {
                 await fetchAssignmentsData(_data?.id);
             })();
         }
-    }, [_data])
+        if (_data && _data.teacherAddress) {
+            (async () => {
+                const { EnsName, EnsAvatar } = await getEnsData(_data.teacherAddress);
+                setTeacherEns(EnsName)
+            })();
+        }
+    }, [_data, address])
 
     return (
         <Container>
@@ -69,7 +81,11 @@ export default function HomeCard({ _data }) {
                     <>
                         {_data.teacherName}{" "}
                         <span title={_data.teacherAddress}>
-                            ({shortenAddress(_data.teacherAddress, 4)})
+                            ({
+                                teacherEns
+                                    ? teacherEns
+                                    : shortenAddress(_data.teacherAddress, 4)
+                            })
                         </span>
                     </>
                 </p>
@@ -83,30 +99,26 @@ export default function HomeCard({ _data }) {
                         : assignmentData && assignmentData.length > 0
                             ? <>{
                                 assignmentData.map((item, ind) => {
-                                    if (new Date().getTime() < parseInt(item.deadline) && !item.marked && !item.submitted) {
-                                        return (
-                                            <>
-                                                <div key={ind}>
-                                                    <p>
-                                                        Due{" "}
-                                                        {new Date(parseInt(item.deadline)).toLocaleString(
-                                                            "default",
-                                                            { day: "numeric", month: "long" }
-                                                        )}
-                                                    </p>
-                                                    <h4 onClick={() => { navigate(`/class/${_data?.id}/1`) }}>
-                                                        {item.name.length > 25
-                                                            ? item.name.slice(0, 25) + "..."
-                                                            : item.name}
-                                                    </h4>
-                                                </div>
-                                                <StyledLink to={`/class/${_data?.id}/1`}>View All →</StyledLink>
-                                            </>
-                                        );
-                                    }
+                                    return (
+                                        <>
+                                            <div key={ind}>
+                                                <p>
+                                                    Due{" "}
+                                                    {new Date(parseInt(item.deadline)).toLocaleString(
+                                                        "default",
+                                                        { day: "numeric", month: "long" }
+                                                    )}
+                                                </p>
+                                                <h4 onClick={() => { navigate(`/class/${_data?.id}/1`) }}>
+                                                    {item.name.length > 25
+                                                        ? item.name.slice(0, 25) + "..."
+                                                        : item.name}
+                                                </h4>
+                                            </div>
+                                            <StyledLink to={`/class/${_data?.id}/1`}>View All →</StyledLink>
+                                        </>
+                                    );
                                 })}
-
-                                <p>No work pending :)</p>
                             </>
                             : <p>No work pending :)</p>
                 }

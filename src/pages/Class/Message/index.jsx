@@ -1,80 +1,80 @@
 import React, { useState, useEffect } from "react";
 import { styled } from "styled-components";
-// import { useAccount, useEnsAvatar, useEnsName } from 'wagmi';
+
+import getEnsData from "../../../utils/getEnsData";
 
 import Modal from "./Modal";
 
 import avatar from "../../../assets/img/placeholder_avatar.png";
 
 export default function Message({ data }) {
-	// const { data: EnsNameData } = useEnsName({
-	//     address: data.from,
-	//     chainId: 5
-	// })
 
-	// const { data: EnsAvatarData } = useEnsAvatar({
-	//     name: data.from,
-	//     chainId: 5
-	// })
+    const [ensName, setEnsName] = useState(null)
+    const [ensAvatar, setEnsAvatar] = useState(null)
 
-	const shortenAddress = (address, place) => {
-		return address.slice(0, place) + "..." + address.slice(-place);
-	};
+    const shortenAddress = (address, place) => {
+        return address.slice(0, place) + "..." + address.slice(-place);
+    };
 
-	const [showModal, setShowModal] = useState("");
+    const [showModal, setShowModal] = useState("");
 
-	// On toggle of Modal, change the scroll mode of body
-	useEffect(() => {
-		if (showModal) {
-			window.scroll(0, 0);
-			document.body.style.overflowY = "hidden";
-		} else {
-			document.body.style.overflowY = "scroll";
-		}
-	}, [showModal]);
+    // On toggle of Modal, change the scroll mode of body
+    useEffect(() => {
+        if (showModal) {
+            window.scroll(0, 0);
+            document.body.style.overflowY = "hidden";
+        } else {
+            document.body.style.overflowY = "scroll";
+        }
+    }, [showModal]);
 
-	return (
-		<Container>
-			{showModal && (
-				<Modal data={data} showModal={showModal} setShowModal={setShowModal} />
-			)}
-			<Top>
-				{/* <img src={EnsAvatarData ? EnsAvatarData : avatar} alt="" /> */}
-				<img src={avatar} alt="" />
-				<div>
-					<p>
-						{
-							// EnsNameData
-							//     ? <>{data.fromName} <span title={data.from}>({EnsNameData})</span></>
-							//     : <>{data.fromName} <span title={data.from}>({shortenAddress(data.from, 4)})</span></>
-							<>
-								{data.fromName}{" "}
-								<span title={data.from}>({shortenAddress(data.from, 4)})</span>
-							</>
-						}
-					</p>
-					<p>
-						{new Date(parseInt(data.timestamp)).toLocaleTimeString("en-us", {
-							hour: "2-digit",
-							minute: "2-digit",
-						})}{" "}
-						{new Date(parseInt(data.timestamp)).toLocaleString("default", {
-							day: "numeric",
-							month: "long",
-						})}
-					</p>
-				</div>
-			</Top>
-			<p>{data.displayMessage}</p>
-			<p
-				onClick={() => {
-					setShowModal(true);
-				}}
-			>
-				View replies →
-			</p>
-		</Container>
-	);
+    useEffect(() => {
+        if (data.from) {
+            (async () => {
+                const { EnsName, EnsAvatar } = await getEnsData(data.from);
+                setEnsName(EnsName)
+                setEnsAvatar(EnsAvatar)
+            })();
+        }
+    }, [data]);
+
+    return (
+        <Container>
+            {showModal && (
+                <Modal data={data} showModal={showModal} setShowModal={setShowModal} />
+            )}
+            <Top>
+                <img src={ensAvatar ? ensAvatar : avatar} alt="" />
+                <div>
+                    <p>
+                        {
+                            ensName
+                                ? <>{data.fromName} <span title={data.from}>({ensName})</span></>
+                                : <>{data.fromName} <span title={data.from}>({shortenAddress(data.from, 4)})</span></>
+                        }
+                    </p>
+                    <p>
+                        {new Date(parseInt(data.timestamp)).toLocaleTimeString("en-us", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                        })}{" "}
+                        {new Date(parseInt(data.timestamp)).toLocaleString("default", {
+                            day: "numeric",
+                            month: "long",
+                        })}
+                    </p>
+                </div>
+            </Top>
+            <p>{data.displayMessage}</p>
+            <p
+                onClick={() => {
+                    setShowModal(true);
+                }}
+            >
+                View replies →
+            </p>
+        </Container>
+    );
 }
 
 const Container = styled.div`
