@@ -7,7 +7,7 @@ export default async function getEnsData(address) {
     //     'goerli'
     // )
     const provider = new ethers.providers.JsonRpcProvider(
-        "https://rpc.ankr.com/eth_goerli", 'goerli'
+        "https://rpc.ankr.com/eth"
     );
 
     try {
