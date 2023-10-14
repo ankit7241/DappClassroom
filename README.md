@@ -2,7 +2,7 @@
 
 DappClassroom is an innovative decentralized adaptation of Google Classroom, leveraging blockchain technology to provide a transparent and fair learning experience. By combining the familiar functionalities of Google Classroom with the power of blockchain, DappClassroom aims to enhance education in a secure and efficient manner. Let's explore the comprehensive details of this project. 
 
-[View live project](dappclassroom-098219.spheron.app)
+[View live project](https://dapp-classroom.vercel.app/)
 
 
 ## Project description
